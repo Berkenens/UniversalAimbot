@@ -727,7 +727,7 @@ task.spawn(function()
 end)
 
 --
-local Toggle = MiscTab:CreateToggle({
+local Toggle = Misc:CreateToggle({
     Name = "Auto Race V4",
     CurrentValue = false,
     Flag = "AutoRaceV4",
