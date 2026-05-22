@@ -453,8 +453,8 @@ Aimbot:CreateToggle({
 Aimbot:CreateSlider({
     Name = "Max Distance",
     Range = {0,5000},
-    Increment = 10,
-    CurrentValue = 5000,
+    Increment = 5,
+    CurrentValue = 500,
     Flag = "MaxDistance",
     Callback = function(v)
         maxDistance = v
@@ -465,7 +465,7 @@ Aimbot:CreateSlider({
     Name = "Smoothing",
     Range = {0,100},
     Increment = 1,
-    CurrentValue = 5,
+    CurrentValue = 0,
     Flag = "Smoothing",
     Callback = function(v)
         smoothing = 1 - (v / 100)
@@ -476,7 +476,7 @@ Aimbot:CreateSlider({
     Name = "Prediction",
     Range = {0,0.2},
     Increment = 0.001,
-    CurrentValue = 0.065,
+    CurrentValue = 0,
     Flag = "Prediction",
     Callback = function(v)
         predictionStrength = v
@@ -487,7 +487,7 @@ Aimbot:CreateSlider({
     Name = "FOV",
     Range = {0,1000},
     Increment = 1,
-    CurrentValue = 100,
+    CurrentValue = 150,
     Flag = "FOV",
     Callback = function(v)
         aimFov = v
