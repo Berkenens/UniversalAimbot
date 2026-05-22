@@ -78,6 +78,7 @@ local Aimbot = Window:CreateTab("Aimbot")
 local ESP = Window:CreateTab("ESP")
 local TargetTab = Window:CreateTab("Target")
 local Allied = Window:CreateTab("Allied")
+local Misc = Window:CreateTab("Misc")
 local Other = Window:CreateTab("Other")
 
 -- FOV
@@ -618,6 +619,122 @@ Other:CreateButton({
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
     end
+})
+
+-- AUTO V4
+local Players = game:GetService("Players")
+
+--
+local player = Players.LocalPlayer
+
+-- settings
+local AUTO_V4 = false
+local NORMAL_CHECK_INTERVAL = 0.25
+local FAST_CHECK_INTERVAL = 0.03
+
+local ACTIVATION_THRESHOLD = 0.92
+local ACTIVATION_COOLDOWN = 8
+
+--
+local lastActivation = 0
+local cachedEvent
+
+--
+local function getActivateEvent()
+    if cachedEvent and cachedEvent.Parent then
+        return cachedEvent
+    end
+
+    cachedEvent =
+        (player:FindFirstChild("Events") and player.Events:FindFirstChild("ActivateRaceV4"))
+        or player.PlayerGui:FindFirstChild("ActivateRaceV4", true)
+        or game:FindFirstChild("ActivateRaceV4", true)
+
+    return cachedEvent
+end
+
+--
+local function getRaceEnergy()
+    local char = player.Character
+    if not char then
+        return nil
+    end
+
+    local energy =
+        player:FindFirstChild("RaceEnergy")
+        or char:FindFirstChild("RaceEnergy")
+
+    if energy then
+        return energy
+    end
+
+    for _, obj in ipairs(player:GetDescendants()) do
+        if obj.Name == "RaceEnergy" then
+            return obj
+        end
+    end
+
+    return nil
+end
+
+--
+task.spawn(function()
+    while true do
+        local waitTime = NORMAL_CHECK_INTERVAL
+
+        if AUTO_V4 then
+            local char = player.Character
+            local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+
+            if humanoid then
+                local raceEnergy = getRaceEnergy()
+
+                if raceEnergy then
+                    -- 
+                    if raceEnergy.Value >= 0.85 then
+                        waitTime = FAST_CHECK_INTERVAL
+                    end
+
+                    -- activ
+                    if raceEnergy.Value >= ACTIVATION_THRESHOLD then
+                        local now = tick()
+
+                        if now - lastActivation >= ACTIVATION_COOLDOWN then
+                            local activateEvent = getActivateEvent()
+
+                            if activateEvent and activateEvent:IsA("BindableEvent") then
+                                lastActivation = now
+
+                                -- spam configuration
+                                task.spawn(function()
+                                    for _ = 1, 15 do
+                                        pcall(function()
+                                            activateEvent:Fire()
+                                        end)
+
+                                        task.wait(0.03)
+                                    end
+                                end)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+
+        task.wait(waitTime)
+    end
+end)
+
+--
+local Toggle = MiscTab:CreateToggle({
+    Name = "Auto Race V4",
+    CurrentValue = false,
+    Flag = "AutoRaceV4",
+
+    Callback = function(Value)
+        AUTO_V4 = Value
+    end,
 })
 
 Rayfield:Notify({
