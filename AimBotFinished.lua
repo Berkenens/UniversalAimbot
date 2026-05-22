@@ -18,23 +18,27 @@ local predictionStrength = 0
 local smoothing = 1 
 
 local aimbotEnabled = false 
-local stickyAimEnabled = false
-local wallCheck = true
-local teamCheck = false
+local stickyAimEnabled = true
+local wallCheck = false
+local teamCheck = true
+
+-- 360 
+local mode360Enabled = true
+local fovCheckEnabled = false
 
 local healthCheck = false
-local minHealth = 0
+local minHealth = 2000 
 
 local prioritizeLowHP = true
-local maxDistance = 5000 
+local maxDistance = 300 
 
 local currentTarget = nil
 
--- ALLIED
+-- ALLIED 
 local alliedPlayers = {}
 local priorityTargetPlayer = nil 
 
--- UI
+-- UI 
 local createdAlliedToggles = {}
 local createdTargetToggles = {}
 
@@ -55,7 +59,7 @@ local chamsColor = Color3.fromRGB(255,0,0)
 
 local espCache = {}
 
--- Main
+-- Main 
 local Window = Rayfield:CreateWindow({
     Name = "▶ Universal Aimbot ◀",
     LoadingTitle = "Loading...",
@@ -128,14 +132,16 @@ local function validPlayer(player)
     local distance = (head.Position - camera.CFrame.Position).Magnitude
     if distance > maxDistance then return false end
 
-    local pos, visible = camera:WorldToViewportPoint(head.Position)
-    if not visible then return false end
+    if not mode360Enabled then
+        local pos, visible = camera:WorldToViewportPoint(head.Position)
+        if not visible then return false end
 
-    local mousePos = Vector2.new(mouse.X, mouse.Y)
-    local screenPos = Vector2.new(pos.X, pos.Y)
+        local mousePos = Vector2.new(mouse.X, mouse.Y)
+        local screenPos = Vector2.new(pos.X, pos.Y)
 
-    local cursorDistance = (screenPos - mousePos).Magnitude
-    if cursorDistance > aimFov then return false end
+        local cursorDistance = (screenPos - mousePos).Magnitude
+        if cursorDistance > aimFov then return false end
+    end
 
     if wallCheck and checkWall(character) then return false end
 
@@ -159,19 +165,9 @@ local function aimAt(player)
 end
 
 local function getTarget()
-    
-    if priorityTargetPlayer then
-        local targetPlayer = Players:FindFirstChild(priorityTargetPlayer)
-        if targetPlayer then
-            if validPlayer(targetPlayer) then
-                return targetPlayer 
-            else
-                return nil -- 
-            end
-        end
-    end
-
     local targets = {}
+    
+    -- 
     for _, player in ipairs(Players:GetPlayers()) do
         if validPlayer(player) then
             table.insert(targets, player)
@@ -180,27 +176,51 @@ local function getTarget()
 
     if #targets == 0 then return nil end
 
-    table.sort(targets, function(a, b)
-        local ah = a.Character.Humanoid.Health
-        local bh = b.Character.Humanoid.Health
+    -- 
+    if prioritizeLowHP then
+        local lowHpTargets = {}
+        for _, player in ipairs(targets) do
+            if player.Character.Humanoid.Health <= minHealth then
+                table.insert(lowHpTargets, player)
+            end
+        end
 
+        -- 
+        if #lowHpTargets > 0 then
+            table.sort(lowHpTargets, function(a, b)
+                local ah = a.Character.Humanoid.Health
+                local bh = b.Character.Humanoid.Health
+                local ad = (a.Character.Head.Position - camera.CFrame.Position).Magnitude
+                local bd = (b.Character.Head.Position - camera.CFrame.Position).Magnitude
+
+                if math.abs(ah - bh) > 1 then
+                    return ah < bh -- 
+                end
+                return ad < bd -- 
+            end)
+            return lowHpTargets[1]
+        end
+    end
+
+    -- 
+    if priorityTargetPlayer then
+        local targetPlayer = Players:FindFirstChild(priorityTargetPlayer)
+        if targetPlayer and validPlayer(targetPlayer) then
+            return targetPlayer 
+        end
+    end
+
+    -- 
+    table.sort(targets, function(a, b)
         local ad = (a.Character.Head.Position - camera.CFrame.Position).Magnitude
         local bd = (b.Character.Head.Position - camera.CFrame.Position).Magnitude
-
-        if prioritizeLowHP then
-            if ah ~= bh then
-                return ah < bh
-            end
-            return ad < bd
-        else
-            return ad < bd
-        end
+        return ad < bd
     end)
 
     return targets[1]
 end
 
--- ESP
+-- ESP 
 local function createESP(player)
     if espCache[player] then return end
 
@@ -235,7 +255,6 @@ end)
 -- 
 local function refreshAlliedList()
     for _, player in ipairs(Players:GetPlayers()) do
-        -- 
         if player ~= plr and not createdAlliedToggles[player.Name] then
             createdAlliedToggles[player.Name] = true 
             
@@ -258,7 +277,7 @@ local function refreshTargetList()
 
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= plr and not createdTargetToggles[player.Name] then
-            createdTargetToggles[player.Name] = true -- Olusturuldu olarak isaretle
+            createdTargetToggles[player.Name] = true 
             
             local fName = "Target_" .. player.Name
             TargetTab:CreateToggle({
@@ -289,7 +308,7 @@ local function refreshTargetList()
     end
 end
 
--- 
+-- BUTTONS
 Allied:CreateButton({
     Name = "Refresh List",
     Callback = function()
@@ -308,7 +327,7 @@ TargetTab:CreateButton({
 refreshAlliedList()
 refreshTargetList()
 
--- 
+-- PLAYER CLEANUP
 Players.PlayerRemoving:Connect(function(player)
     removeESP(player)
     alliedPlayers[player.Name] = nil
@@ -317,7 +336,7 @@ Players.PlayerRemoving:Connect(function(player)
     end
 end)
 
--- 
+-- MAIN LOOP
 RunService.RenderStepped:Connect(function()
     if aimbotEnabled then
         fovCircle.Position = Vector2.new(mouse.X, mouse.Y + 50)
@@ -351,7 +370,7 @@ RunService.RenderStepped:Connect(function()
         currentTarget = nil
     end
 
-    -- ESP
+    -- ESP 
     for player, drawings in pairs(espCache) do
         local character = player.Character
         local humanoid = character and character:FindFirstChild("Humanoid")
@@ -408,15 +427,18 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- AIMBOT UI CONFIG
+-- AIMBOT 
 local AimbotToggle;
+local fovToggle;
+local mode360Toggle;
+
 AimbotToggle = Aimbot:CreateToggle({
     Name = "Aimbot Enabled",
     CurrentValue = false,
     Flag = "AimbotEnabled",
     Callback = function(v)
         aimbotEnabled = v
-        fovCircle.Visible = v
+        fovCircle.Visible = (v and fovCheckEnabled)
     end
 })
 
@@ -430,9 +452,44 @@ Aimbot:CreateKeybind({
     end
 })
 
+-- 
+fovToggle = Aimbot:CreateToggle({
+    Name = "FOV Check",
+    CurrentValue = false,
+    Flag = "FOVCheck",
+    Callback = function(v)
+        fovCheckEnabled = v
+        if v then
+            fovCircle.Visible = aimbotEnabled
+            if mode360Enabled then
+                mode360Enabled = false
+                if mode360Toggle then mode360Toggle:Set(false) end
+            end
+        else
+            fovCircle.Visible = false
+        end
+    end
+})
+
+mode360Toggle = Aimbot:CreateToggle({
+    Name = "360 Mode",
+    CurrentValue = true,
+    Flag = "Mode360",
+    Callback = function(v)
+        mode360Enabled = v
+        if v then
+            fovCircle.Visible = false
+            if fovCheckEnabled then
+                fovCheckEnabled = false
+                if fovToggle then fovToggle:Set(false) end
+            end
+        end
+    end
+})
+
 Aimbot:CreateToggle({
     Name = "Sticky Aim",
-    CurrentValue = false,
+    CurrentValue = true,
     Flag = "StickyAim",
     Callback = function(v)
         stickyAimEnabled = v
@@ -449,10 +506,21 @@ Aimbot:CreateToggle({
 })
 
 Aimbot:CreateSlider({
+    Name = "Min Health Threshold",
+    Range = {0, 25000},
+    Increment = 100,
+    CurrentValue = 2000,
+    Flag = "MinHealth",
+    Callback = function(v)
+        minHealth = v
+    end
+})
+
+Aimbot:CreateSlider({
     Name = "Max Distance",
     Range = {0,5000},
     Increment = 5,
-    CurrentValue = 5000, 
+    CurrentValue = 300, 
     Flag = "MaxDistance",
     Callback = function(v)
         maxDistance = v
@@ -495,7 +563,7 @@ Aimbot:CreateSlider({
 
 Aimbot:CreateToggle({
     Name = "Wall Check",
-    CurrentValue = true,
+    CurrentValue = false,
     Flag = "WallCheck",
     Callback = function(v)
         wallCheck = v
@@ -504,7 +572,7 @@ Aimbot:CreateToggle({
 
 Aimbot:CreateToggle({
     Name = "Team Check",
-    CurrentValue = false,
+    CurrentValue = true,
     Flag = "TeamCheck",
     Callback = function(v)
         teamCheck = v
@@ -520,7 +588,7 @@ Aimbot:CreateToggle({
     end
 })
 
--- ESP UI CONFIG
+-- ESP UI 
 ESP:CreateToggle({
     Name = "Enable ESP",
     CurrentValue = false,
@@ -661,7 +729,7 @@ task.spawn(function()
             if humanoid then
                 local raceEnergy = getRaceEnergy()
                 if raceEnergy then
-                    if raceEnergy.Value >= 0.85 then
+                    if raceEnergy.Value >= 0.95 then
                         waitTime = FAST_CHECK_INTERVAL
                     end
 
