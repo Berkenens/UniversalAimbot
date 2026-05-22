@@ -17,7 +17,7 @@ local rainbowSpeed = 0.005
 
 local aimFov = 150
 local predictionStrength = 0
-local smoothing = 0
+local smoothing = 0.5
 
 local aimbotEnabled = false 
 local stickyAimEnabled = false
@@ -466,7 +466,7 @@ Aimbot:CreateSlider({
     Name = "Smoothing",
     Range = {0,100},
     Increment = 1,
-    CurrentValue = 0,
+    CurrentValue = 0.5,
     Flag = "Smoothing",
     Callback = function(v)
         smoothing = 1 - (v / 100)
