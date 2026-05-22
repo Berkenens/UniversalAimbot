@@ -9,15 +9,13 @@ local plr = Players.LocalPlayer
 local camera = Workspace.CurrentCamera
 local mouse = plr:GetMouse()
 
-
-
 local hue = 0
 local rainbowFov = false
 local rainbowSpeed = 0.005
 
 local aimFov = 150
 local predictionStrength = 0
-local smoothing = 0
+local smoothing = 1 
 
 local aimbotEnabled = false 
 local stickyAimEnabled = false
@@ -28,25 +26,22 @@ local healthCheck = false
 local minHealth = 0
 
 local prioritizeLowHP = true
-local maxDistance = 500
+local maxDistance = 5000 
 
 local currentTarget = nil
 
 -- ALLIED
-
 local alliedPlayers = {}
-local alliedToggles = {}
-
 local priorityTargetPlayer = nil 
-local targetToggles = {} 
 
-
+-- UI
+local createdAlliedToggles = {}
+local createdTargetToggles = {}
 
 local circleColor = Color3.fromRGB(255,0,0)
 local targetedCircleColor = Color3.fromRGB(0,255,0)
 
 -- ESP
-
 local espEnabled = false
 local espName = true
 local espHealth = true
@@ -61,12 +56,10 @@ local chamsColor = Color3.fromRGB(255,0,0)
 local espCache = {}
 
 -- Main
-
 local Window = Rayfield:CreateWindow({
     Name = "▶ Universal Aimbot ◀",
     LoadingTitle = "Loading...",
     LoadingSubtitle = "by Perseus",
-
     ConfigurationSaving = {
         Enabled = true,
         FolderName = "UniversalAimbot",
@@ -82,15 +75,12 @@ local Misc = Window:CreateTab("Misc")
 local Other = Window:CreateTab("Other")
 
 -- FOV
-
 local fovCircle = Drawing.new("Circle")
 fovCircle.Thickness = 2
 fovCircle.Radius = aimFov
 fovCircle.Filled = false
 fovCircle.Color = circleColor
 fovCircle.Visible = false
-
-
 
 local function isAllied(player)
     return alliedPlayers[player.Name] == true
@@ -159,7 +149,7 @@ local function predict(player)
 end
 
 local function smooth(from,to)
-    return from:Lerp(to,smoothing)
+    return from:Lerp(to, smoothing)
 end
 
 local function aimAt(player)
@@ -169,19 +159,18 @@ local function aimAt(player)
 end
 
 local function getTarget()
-   
+    
     if priorityTargetPlayer then
         local targetPlayer = Players:FindFirstChild(priorityTargetPlayer)
-      
-        if targetPlayer and validPlayer(targetPlayer) then
-            return targetPlayer
-        else
-           
-            return nil
+        if targetPlayer then
+            if validPlayer(targetPlayer) then
+                return targetPlayer 
+            else
+                return nil -- 
+            end
         end
     end
 
-    
     local targets = {}
     for _, player in ipairs(Players:GetPlayers()) do
         if validPlayer(player) then
@@ -212,7 +201,6 @@ local function getTarget()
 end
 
 -- ESP
-
 local function createESP(player)
     if espCache[player] then return end
 
@@ -230,6 +218,10 @@ local function removeESP(player)
         espCache[player].Text:Remove()
         espCache[player] = nil
     end
+    if player.Character then
+        local highlight = player.Character:FindFirstChild("EspHighlight")
+        if highlight then highlight:Destroy() end
+    end
 end
 
 for _, player in ipairs(Players:GetPlayers()) do
@@ -240,27 +232,14 @@ Players.PlayerAdded:Connect(function(player)
     if player ~= plr then createESP(player) end
 end)
 
-Players.PlayerRemoving:Connect(function(player)
-    removeESP(player)
-    alliedPlayers[player.Name] = nil
-    if priorityTargetPlayer == player.Name then
-        priorityTargetPlayer = nil
-    end
-end)
-
--- ALLIED CORE
-
+-- 
 local function refreshAlliedList()
-    for name, toggle in pairs(alliedToggles) do
-        if toggle and toggle.Interact then
-            toggle.Interact:Destroy()
-        end
-    end
-    alliedToggles = {}
-
     for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= plr then
-            alliedToggles[player.Name] = Allied:CreateToggle({
+        -- 
+        if player ~= plr and not createdAlliedToggles[player.Name] then
+            createdAlliedToggles[player.Name] = true 
+            
+            Allied:CreateToggle({
                 Name = player.Name,
                 CurrentValue = alliedPlayers[player.Name] or false,
                 Flag = "Allied_" .. player.Name,
@@ -272,39 +251,31 @@ local function refreshAlliedList()
     end
 end
 
-Allied:CreateButton({
-    Name = "Refresh List",
-    Callback = function()
-        refreshAlliedList()
-    end
-})
-
-refreshAlliedList()
-
--- TARGET SYSTEM
-
 local function refreshTargetList()
-    for name, toggle in pairs(targetToggles) do
-        if toggle and toggle.Interact then
-            toggle.Interact:Destroy()
-        end
-    end
-    targetToggles = {}
-
     if priorityTargetPlayer and not Players:FindFirstChild(priorityTargetPlayer) then
         priorityTargetPlayer = nil
     end
 
     for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= plr then
-            targetToggles[player.Name] = TargetTab:CreateToggle({
+        if player ~= plr and not createdTargetToggles[player.Name] then
+            createdTargetToggles[player.Name] = true -- Olusturuldu olarak isaretle
+            
+            local fName = "Target_" .. player.Name
+            TargetTab:CreateToggle({
                 Name = player.Name,
                 CurrentValue = (priorityTargetPlayer == player.Name),
-                Flag = "Target_" .. player.Name,
+                Flag = fName,
                 Callback = function(v)
                     if v then
-                        if priorityTargetPlayer and priorityTargetPlayer ~= player.Name and targetToggles[priorityTargetPlayer] then
-                            targetToggles[priorityTargetPlayer]:Set(false)
+                        if priorityTargetPlayer and priorityTargetPlayer ~= player.Name then
+                            local oldFlag = "Target_" .. priorityTargetPlayer
+                            if Rayfield.Flags[oldFlag] then
+                                pcall(function()
+                                    for _, el in ipairs(TargetTab.Elements) do
+                                        if el.Flag == oldFlag and el.Set then el:Set(false) end
+                                    end
+                                end)
+                            end
                         end
                         priorityTargetPlayer = player.Name
                     else
@@ -318,6 +289,14 @@ local function refreshTargetList()
     end
 end
 
+-- 
+Allied:CreateButton({
+    Name = "Refresh List",
+    Callback = function()
+        refreshAlliedList()
+    end
+})
+
 TargetTab:CreateButton({
     Name = "Refresh Playerlist",
     Callback = function()
@@ -325,9 +304,20 @@ TargetTab:CreateButton({
     end
 })
 
+-- 
+refreshAlliedList()
 refreshTargetList()
 
--- LOOP
+-- 
+Players.PlayerRemoving:Connect(function(player)
+    removeESP(player)
+    alliedPlayers[player.Name] = nil
+    if priorityTargetPlayer == player.Name then
+        priorityTargetPlayer = nil
+    end
+end)
+
+-- 
 RunService.RenderStepped:Connect(function()
     if aimbotEnabled then
         fovCircle.Position = Vector2.new(mouse.X, mouse.Y + 50)
@@ -383,36 +373,43 @@ RunService.RenderStepped:Connect(function()
                 drawings.Text.Color = nameColor
                 drawings.Text.Visible = true
 
-                
                 if espChams then
-                    for _, part in ipairs(character:GetChildren()) do
-                        if part:IsA("BasePart") then
-                            if not part:FindFirstChild("Cham") then
-                                local cham = Instance.new("BoxHandleAdornment")
-                                cham.Name = "Cham"
-                                cham.Adornee = part
-                                cham.AlwaysOnTop = true
-                                cham.ZIndex = 5
-                                cham.Size = part.Size + Vector3.new(0.02,0.02,0.02)
-                                cham.Transparency = 0.5
-                                cham.Color3 = chamsColor
-                                cham.Parent = part
-                            end
-                        end
+                    local highlight = character:FindFirstChild("EspHighlight")
+                    if not highlight then
+                        highlight = Instance.new("Highlight")
+                        highlight.Name = "EspHighlight"
+                        highlight.FillColor = chamsColor
+                        highlight.OutlineColor = chamsColor
+                        highlight.FillTransparency = 0.5
+                        highlight.OutlineTransparency = 0
+                        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                        highlight.Parent = character
+                    else
+                        highlight.FillColor = chamsColor
+                        highlight.OutlineColor = chamsColor
+                        highlight.Enabled = true
                     end
+                else
+                    local highlight = character:FindFirstChild("EspHighlight")
+                    if highlight then highlight.Enabled = false end
                 end
             else
                 drawings.Text.Visible = false
+                local highlight = character:FindFirstChild("EspHighlight")
+                if highlight then highlight.Enabled = false end
             end
         else
             drawings.Text.Visible = false
+            if character then
+                local highlight = character:FindFirstChild("EspHighlight")
+                if highlight then highlight.Enabled = false end
+            end
         end
     end
 end)
 
--- AIMBOT UI
+-- AIMBOT UI CONFIG
 local AimbotToggle;
-
 AimbotToggle = Aimbot:CreateToggle({
     Name = "Aimbot Enabled",
     CurrentValue = false,
@@ -455,7 +452,7 @@ Aimbot:CreateSlider({
     Name = "Max Distance",
     Range = {0,5000},
     Increment = 5,
-    CurrentValue = 500,
+    CurrentValue = 5000, 
     Flag = "MaxDistance",
     Callback = function(v)
         maxDistance = v
@@ -469,7 +466,7 @@ Aimbot:CreateSlider({
     CurrentValue = 0,
     Flag = "Smoothing",
     Callback = function(v)
-        smoothing = 1 - (v / 100)
+        smoothing = math.max(1 - (v / 100), 0.001) 
     end
 })
 
@@ -523,8 +520,7 @@ Aimbot:CreateToggle({
     end
 })
 
--- ESP UI
-
+-- ESP UI CONFIG
 ESP:CreateToggle({
     Name = "Enable ESP",
     CurrentValue = false,
@@ -606,7 +602,7 @@ ESP:CreateColorPicker({
     end
 })
 
--- Other
+-- Other Tabs
 Other:CreateButton({
     Name = "FPS GUI",
     Callback = function()
@@ -621,97 +617,65 @@ Other:CreateButton({
     end
 })
 
--- AUTO V4
-local Players = game:GetService("Players")
-
---
-local player = Players.LocalPlayer
-
--- settings
+-- AUTO RACE V4
 local AUTO_V4 = false
 local NORMAL_CHECK_INTERVAL = 0.25
 local FAST_CHECK_INTERVAL = 0.03
-
 local ACTIVATION_THRESHOLD = 0.92
 local ACTIVATION_COOLDOWN = 8
-
---
 local lastActivation = 0
 local cachedEvent
 
---
 local function getActivateEvent()
     if cachedEvent and cachedEvent.Parent then
         return cachedEvent
     end
-
-    cachedEvent =
-        (player:FindFirstChild("Events") and player.Events:FindFirstChild("ActivateRaceV4"))
-        or player.PlayerGui:FindFirstChild("ActivateRaceV4", true)
+    cachedEvent = (plr:FindFirstChild("Events") and plr.Events:FindFirstChild("ActivateRaceV4"))
+        or (plr:FindFirstChild("PlayerGui") and plr.PlayerGui:FindFirstChild("ActivateRaceV4", true))
         or game:FindFirstChild("ActivateRaceV4", true)
-
     return cachedEvent
 end
 
---
 local function getRaceEnergy()
-    local char = player.Character
-    if not char then
-        return nil
-    end
+    local char = plr.Character
+    if not char then return nil end
 
-    local energy =
-        player:FindFirstChild("RaceEnergy")
-        or char:FindFirstChild("RaceEnergy")
+    local energy = plr:FindFirstChild("RaceEnergy") or char:FindFirstChild("RaceEnergy")
+    if energy then return energy end
 
-    if energy then
-        return energy
-    end
-
-    for _, obj in ipairs(player:GetDescendants()) do
+    for _, obj in ipairs(plr:GetDescendants()) do
         if obj.Name == "RaceEnergy" then
             return obj
         end
     end
-
     return nil
 end
 
---
 task.spawn(function()
     while true do
         local waitTime = NORMAL_CHECK_INTERVAL
-
         if AUTO_V4 then
-            local char = player.Character
+            local char = plr.Character
             local humanoid = char and char:FindFirstChildOfClass("Humanoid")
 
             if humanoid then
                 local raceEnergy = getRaceEnergy()
-
                 if raceEnergy then
-                    -- 
                     if raceEnergy.Value >= 0.85 then
                         waitTime = FAST_CHECK_INTERVAL
                     end
 
-                    -- activ
                     if raceEnergy.Value >= ACTIVATION_THRESHOLD then
                         local now = tick()
-
                         if now - lastActivation >= ACTIVATION_COOLDOWN then
                             local activateEvent = getActivateEvent()
-
                             if activateEvent and activateEvent:IsA("BindableEvent") then
                                 lastActivation = now
-
-                                -- spam configuration
                                 task.spawn(function()
-                                    for _ = 1, 15 do
+                                    for _ = 1, 50 do
                                         pcall(function()
                                             activateEvent:Fire()
                                         end)
-
                                         task.wait(0.03)
                                     end
                                 end)
@@ -721,17 +685,14 @@ task.spawn(function()
                 end
             end
         end
-
         task.wait(waitTime)
     end
 end)
 
---
-local Toggle = Misc:CreateToggle({
+Misc:CreateToggle({
     Name = "Auto Race V4",
     CurrentValue = false,
     Flag = "AutoRaceV4",
-
     Callback = function(Value)
         AUTO_V4 = Value
     end,
@@ -739,6 +700,6 @@ local Toggle = Misc:CreateToggle({
 
 Rayfield:Notify({
     Name = "Aimbot Loaded",
-    Content = "Script Loaded",
+    Content = "Script Loaded Successfully!",
     Duration = 5
 })
