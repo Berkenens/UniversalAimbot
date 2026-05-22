@@ -65,7 +65,7 @@ local espCache = {}
 local Window = Rayfield:CreateWindow({
     Name = "▶ Universal Aimbot ◀",
     LoadingTitle = "Loading...",
-    LoadingSubtitle = "by Agreed & Perseus",
+    LoadingSubtitle = "by Perseus",
 
     ConfigurationSaving = {
         Enabled = true,
