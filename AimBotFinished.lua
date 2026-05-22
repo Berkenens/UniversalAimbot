@@ -424,7 +424,7 @@ AimbotToggle = Aimbot:CreateToggle({
 
 Aimbot:CreateKeybind({
     Name = "Aimbot Keybind",
-    CurrentKeybind = "Q",
+    CurrentKeybind = "H",
     HoldToInteract = false,
     Flag = "AimbotKeybind",
     Callback = function(Key)
