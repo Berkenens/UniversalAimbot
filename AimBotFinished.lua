@@ -27,7 +27,7 @@ local mode360Enabled = true
 local fovCheckEnabled = false
 
 local healthCheck = false
-local minHealth = 2000 
+local minHealth = 6000 
 
 local prioritizeLowHP = true
 local maxDistance = 300 
@@ -511,7 +511,7 @@ Aimbot:CreateSlider({
     Name = "Min Health Threshold",
     Range = {0, 25000},
     Increment = 100,
-    CurrentValue = 2000,
+    CurrentValue = 6000,
     Flag = "MinHealth",
     Callback = function(v)
         minHealth = v
