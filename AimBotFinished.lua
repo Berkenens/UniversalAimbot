@@ -32,6 +32,8 @@ local minHealth = 2000
 local prioritizeLowHP = true
 local maxDistance = 300 
 
+local AUTO_V4 = true
+
 local currentTarget = nil
 
 -- ALLIED 
@@ -759,7 +761,7 @@ end)
 
 Misc:CreateToggle({
     Name = "Auto Race V4",
-    CurrentValue = false,
+    CurrentValue = true,
     Flag = "AutoRaceV4",
     Callback = function(Value)
         AUTO_V4 = Value
