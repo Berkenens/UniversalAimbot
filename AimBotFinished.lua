@@ -15,9 +15,9 @@ local hue = 0
 local rainbowFov = false
 local rainbowSpeed = 0.005
 
-local aimFov = 100
-local predictionStrength = 0.065
-local smoothing = 0.05
+local aimFov = 150
+local predictionStrength = 0
+local smoothing = 0
 
 local aimbotEnabled = false 
 local stickyAimEnabled = false
@@ -28,7 +28,7 @@ local healthCheck = false
 local minHealth = 0
 
 local prioritizeLowHP = true
-local maxDistance = 5000
+local maxDistance = 500
 
 local currentTarget = nil
 
