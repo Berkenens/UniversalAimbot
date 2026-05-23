@@ -730,7 +730,7 @@ task.spawn(function()
             if humanoid then
                 local raceEnergy = getRaceEnergy()
                 if raceEnergy then
-                    if raceEnergy.Value >= 0.95 then
+                    if raceEnergy.Value >= 0.95 then --- energy
                         waitTime = FAST_CHECK_INTERVAL
                     end
 
@@ -741,7 +741,7 @@ task.spawn(function()
                             if activateEvent and activateEvent:IsA("BindableEvent") then
                                 lastActivation = now
                                 task.spawn(function()
-                                    for _ = 1, 50 do
+                                    for _ = 1, 100 do ----- xxx
                                         pcall(function()
                                             activateEvent:Fire()
                                         end)
