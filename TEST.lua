@@ -772,7 +772,7 @@ local LocalPlayer = Players.LocalPlayer
 
 
 local HitboxEnabled = false
-local HitboxSize = 2
+local HitboxSize = 0
 
 
 local function UpdateHitbox(character)
@@ -827,26 +827,24 @@ for _, player in ipairs(Players:GetPlayers()) do
     end
 end
 
-
-local HitboxToggle = MiscTab:CreateToggle({
-    Name = "Oyuncu Hitbox",
+Aimbot:CreateToggle({
+    Name = "Hitbox",
     CurrentValue = false,
-    Flag = "HitboxToggle", 
-    Callback = function(Value)
-        HitboxEnabled = Value
+    Flag = "HitboxToggle",
+    Callback = function(v)
+          HitboxEnabled = Value
         RefreshAllHitboxes() 
     end,
 })
 
-
-local HitboxSlider = MiscTab:CreateSlider({
-    Name = "Hitbox Boyutu",
-    Range = {1, 200},
+Misc:CreateSlider({
+    Name = "Hitbox Expander",
+    Range = {0, 200},
     Increment = 2,
     Suffix = "Studs",
-    CurrentValue = 2,
+    CurrentValue = 0,
     Flag = "HitboxSizeSlider",
-    Callback = function(Value)
+    Callback = function(v)
         HitboxSize = Value
         
         if HitboxEnabled then
