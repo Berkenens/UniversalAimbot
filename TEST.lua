@@ -827,7 +827,7 @@ for _, player in ipairs(Players:GetPlayers()) do
     end
 end
 
-Aimbot:CreateToggle({
+Misc:CreateToggle({
     Name = "Hitbox",
     CurrentValue = false,
     Flag = "HitboxToggle",
