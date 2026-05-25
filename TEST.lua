@@ -768,91 +768,171 @@ Misc:CreateToggle({
 })
 
 local Players = game:GetService("Players")
+
 local LocalPlayer = Players.LocalPlayer
 
+--
 
 local HitboxEnabled = false
-local HitboxSize = 0
+local HitboxSize = 5
+local HitboxTransparency = 0.4
 
+--
 
-local function UpdateHitbox(character)
-    if not character then return end
-    
-    local hrp = character:WaitForChild("HumanoidRootPart", 5)
-    if not hrp then return end
+local DEFAULT_SIZE = Vector3.new(2,1,1)
+
+-- 
+
+local function GetRoot(character)
+
+    return character and character:FindFirstChild("HumanoidRootPart")
+end
+
+local function ApplyHitbox(player)
+
+    if player == LocalPlayer then
+        return
+    end
+
+    local character = player.Character
+    if not character then
+        return
+    end
+
+    local root = GetRoot(character)
+    if not root then
+        return
+    end
 
     if HitboxEnabled then
-        if not hrp:GetAttribute("OriginalSize") then
-            hrp:SetAttribute("OriginalSize", hrp.Size)
+
+        local size = HitboxSize
+
+        if size <= 1 then
+            root.Size = DEFAULT_SIZE
+        else
+            root.Size = Vector3.new(size,size,size)
         end
-        
-        hrp.Size = Vector3.new(HitboxSize, HitboxSize, HitboxSize)
-        hrp.Massless = true
-        hrp.CanCollide = false
-        hrp.Transparency = 0.7 
+
+        root.Transparency = HitboxTransparency
+        root.CanCollide = false
+
     else
-        local origSize = hrp:GetAttribute("OriginalSize")
-        if origSize then
-            hrp.Size = origSize
-            hrp.Transparency = 1 
-        end
+
+        root.Size = DEFAULT_SIZE
+        root.Transparency = 1
+        root.CanCollide = false
     end
 end
 
+local function RefreshHitboxes()
 
-local function RefreshAllHitboxes()
     for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            UpdateHitbox(player.Character)
+
+        if player ~= LocalPlayer then
+            ApplyHitbox(player)
         end
     end
 end
 
+local function SetupCharacter(player, character)
 
-Players.PlayerAdded:Connect(function(player)
-    if player == LocalPlayer then return end
-    player.CharacterAdded:Connect(function(char)
-        task.wait(0.2)
-        UpdateHitbox(char)
-    end)
-end)
+    local root = character:WaitForChild("HumanoidRootPart", 10)
 
+    if not root then
+        return
+    end
 
-for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= LocalPlayer then
-        player.CharacterAdded:Connect(function(char)
-            task.wait(0.2)
-            UpdateHitbox(char)
+    task.wait(0.15)
+
+    ApplyHitbox(player)
+end
+
+local function SetupPlayer(player)
+
+    if player == LocalPlayer then
+        return
+    end
+
+    if player.Character then
+        task.spawn(function()
+            SetupCharacter(player, player.Character)
         end)
     end
+
+    player.CharacterAdded:Connect(function(character)
+
+        task.spawn(function()
+            SetupCharacter(player, character)
+        end)
+    end)
 end
 
+-- 
+
+for _, player in ipairs(Players:GetPlayers()) do
+    SetupPlayer(player)
+end
+
+-- NEW PLAYERS
+
+Players.PlayerAdded:Connect(function(player)
+    SetupPlayer(player)
+end)
+
+-- 
+
 Misc:CreateToggle({
+
     Name = "Hitbox",
     CurrentValue = false,
     Flag = "HitboxToggle",
-    Callback = function(v)
-          HitboxEnabled = Value
-        RefreshAllHitboxes() 
+
+    Callback = function(Value)
+
+        HitboxEnabled = Value
+
+        RefreshHitboxes()
     end,
 })
 
 Misc:CreateSlider({
+
     Name = "Hitbox Expander",
-    Range = {0, 200},
-    Increment = 2,
-    Suffix = "Studs",
-    CurrentValue = 0,
+    Range = {1, 70},
+    Increment = 1,
+    Suffix = "Size",
+    CurrentValue = 5,
     Flag = "HitboxSizeSlider",
-    Callback = function(v)
+
+    Callback = function(Value)
+
         HitboxSize = Value
-        
+
         if HitboxEnabled then
-            RefreshAllHitboxes()
+            RefreshHitboxes()
         end
     end,
 })
 
+Misc:CreateSlider({
+
+    Name = "Hitbox Transparency",
+    Range = {0, 100},
+    Increment = 5,
+    Suffix = "%",
+    CurrentValue = 40,
+    Flag = "HitboxTransparencySlider",
+
+    Callback = function(Value)
+
+        HitboxTransparency = Value / 100
+
+        if HitboxEnabled then
+            RefreshHitboxes()
+        end
+    end,
+})
 Rayfield:Notify({
     Name = "Aimbot Loaded",
     Content = "Script Loaded Successfully!",
