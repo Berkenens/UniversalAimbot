@@ -767,6 +767,8 @@ Misc:CreateToggle({
     end,
 })
 
+--HITBOX EXPANDER
+
 local Players = game:GetService("Players")
 
 local LocalPlayer = Players.LocalPlayer
@@ -874,7 +876,7 @@ for _, player in ipairs(Players:GetPlayers()) do
     SetupPlayer(player)
 end
 
--- NEW PLAYERS
+-- 
 
 Players.PlayerAdded:Connect(function(player)
     SetupPlayer(player)
@@ -933,6 +935,111 @@ Misc:CreateSlider({
         end
     end,
 })
+
+--TPWALK (ANTISTUN)
+
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+
+local LocalPlayer = Players.LocalPlayer
+
+-- 
+
+local TPWalkEnabled = false
+local TPWalkSpeed = 1
+
+local TPWalkConnection
+
+local function StopTPWalk()
+
+    if TPWalkConnection then
+        TPWalkConnection:Disconnect()
+        TPWalkConnection = nil
+    end
+end
+
+local function StartTPWalk()
+
+    StopTPWalk()
+
+    TPWalkConnection = RunService.Heartbeat:Connect(function(delta)
+
+        if not TPWalkEnabled then
+            return
+        end
+
+        local character = LocalPlayer.Character
+        if not character then
+            return
+        end
+
+        local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+        local root = character:FindFirstChild("HumanoidRootPart")
+
+        if not humanoid or not root then
+            return
+        end
+
+        local moveDirection = humanoid.MoveDirection
+
+        if moveDirection.Magnitude > 0 then
+
+            character:TranslateBy(
+                moveDirection * TPWalkSpeed * delta * 10
+            )
+        end
+    end)
+end
+
+-- 
+
+Misc:CreateToggle({
+
+    Name = "Speed (AntiStun)",
+    CurrentValue = false,
+    Flag = "TPWalkToggle",
+
+    Callback = function(Value)
+
+        TPWalkEnabled = Value
+
+        if Value then
+            StartTPWalk()
+        else
+            StopTPWalk()
+        end
+    end,
+})
+
+-- 
+
+Misc:CreateSlider({
+
+    Name = "Speed Value",
+    Range = {1, 50},
+    Increment = 1,
+    Suffix = "Speed",
+    CurrentValue = 1,
+    Flag = "TPWalkSpeedSlider",
+
+    Callback = function(Value)
+
+        TPWalkSpeed = Value
+    end,
+})
+
+-- 
+
+LocalPlayer.CharacterAdded:Connect(function()
+
+    task.wait(1)
+
+    if TPWalkEnabled then
+        StartTPWalk()
+    end
+end)
+
+
 Rayfield:Notify({
     Name = "Aimbot Loaded",
     Content = "Script Loaded Successfully!",
