@@ -730,7 +730,7 @@ task.spawn(function()
             if humanoid then
                 local raceEnergy = getRaceEnergy()
                 if raceEnergy then
-                    if raceEnergy.Value >= 0.95 then --- energy
+                    if raceEnergy.Value >= 0.95 then 
                         waitTime = FAST_CHECK_INTERVAL
                     end
 
@@ -764,6 +764,94 @@ Misc:CreateToggle({
     Flag = "AutoRaceV4",
     Callback = function(Value)
         AUTO_V4 = Value
+    end,
+})
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+
+local HitboxEnabled = false
+local HitboxSize = 2
+
+
+local function UpdateHitbox(character)
+    if not character then return end
+    
+    local hrp = character:WaitForChild("HumanoidRootPart", 5)
+    if not hrp then return end
+
+    if HitboxEnabled then
+        if not hrp:GetAttribute("OriginalSize") then
+            hrp:SetAttribute("OriginalSize", hrp.Size)
+        end
+        
+        hrp.Size = Vector3.new(HitboxSize, HitboxSize, HitboxSize)
+        hrp.Massless = true
+        hrp.CanCollide = false
+        hrp.Transparency = 0.7 
+    else
+        local origSize = hrp:GetAttribute("OriginalSize")
+        if origSize then
+            hrp.Size = origSize
+            hrp.Transparency = 1 
+        end
+    end
+end
+
+
+local function RefreshAllHitboxes()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            UpdateHitbox(player.Character)
+        end
+    end
+end
+
+
+Players.PlayerAdded:Connect(function(player)
+    if player == LocalPlayer then return end
+    player.CharacterAdded:Connect(function(char)
+        task.wait(0.2)
+        UpdateHitbox(char)
+    end)
+end)
+
+
+for _, player in ipairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer then
+        player.CharacterAdded:Connect(function(char)
+            task.wait(0.2)
+            UpdateHitbox(char)
+        end)
+    end
+end
+
+
+local HitboxToggle = MiscTab:CreateToggle({
+    Name = "Oyuncu Hitbox",
+    CurrentValue = false,
+    Flag = "HitboxToggle", 
+    Callback = function(Value)
+        HitboxEnabled = Value
+        RefreshAllHitboxes() 
+    end,
+})
+
+
+local HitboxSlider = MiscTab:CreateSlider({
+    Name = "Hitbox Boyutu",
+    Range = {1, 200},
+    Increment = 2,
+    Suffix = "Studs",
+    CurrentValue = 2,
+    Flag = "HitboxSizeSlider",
+    Callback = function(Value)
+        HitboxSize = Value
+        
+        if HitboxEnabled then
+            RefreshAllHitboxes()
+        end
     end,
 })
 
