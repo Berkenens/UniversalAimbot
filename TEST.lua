@@ -1041,6 +1041,60 @@ LocalPlayer.CharacterAdded:Connect(function()
     end
 end)
 
+--CLICK TP
+
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local TPEnabled = false
+local TPCConnection = nil
+
+--
+
+local function SetClickTP(state)
+    TPEnabled = state
+
+    if TPCConnection then
+        TPCConnection:Disconnect()
+        TPCConnection = nil
+    end
+
+    if not TPEnabled then return end
+
+    TPCConnection = UserInputService.InputBegan:Connect(function(input, gp)
+        if gp then return end
+        if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+
+        local Camera = workspace.CurrentCamera
+        local mousePos = UserInputService:GetMouseLocation()
+
+        local ray = Camera:ScreenPointToRay(mousePos.X, mousePos.Y)
+        local result = workspace:Raycast(ray.Origin, ray.Direction * 2000)
+
+        if result then
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                hrp.CFrame = CFrame.new(result.Position + Vector3.new(0, 5, 0))
+            end
+        end
+    end)
+end
+
+
+Misc:CreateToggle({
+    Name = "Click TP",
+    CurrentValue = false,
+    Flag = "Toggle_ClickTP",
+
+    Callback = function(Value)
+        SetClickTP(Value)
+    end,
+})
+
+
+
 
 --NAME PROTECTION
 
@@ -1257,7 +1311,7 @@ local function DisableNameProtect()
     end
 end
 
---// TOGGLE
+--
 
 Misc:CreateToggle({
 
@@ -1275,7 +1329,7 @@ Misc:CreateToggle({
     end,
 })
 
---// DROPDOWN
+--
 
 Misc:CreateDropdown({
 
@@ -1302,11 +1356,39 @@ Misc:CreateDropdown({
     end,
 })
 
---// AUTO ENABLE
+--
 
 task.spawn(function()
     EnableNameProtect()
 end)
+
+--AntiAfk
+
+local Players = game:GetService("Players")
+local VirtualUser = game:GetService("VirtualUser")
+
+
+local AntiAfkEnabled = true 
+
+
+Players.LocalPlayer.Idled:Connect(function()
+    
+    if AntiAfkEnabled then
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new(0, 0))
+    end
+end)
+
+
+
+Misc:CreateToggle({
+    Name = "Anti AFK",
+    CurrentValue = true, 
+    Flag = "AntiAfkToggle", 
+    Callback = function(Value)
+        AntiAfkEnabled = Value
+    end,
+})
 
 
 ------Player--------
