@@ -78,6 +78,7 @@ local TargetTab = Window:CreateTab("Target")
 local Allied = Window:CreateTab("Allied")
 local Misc = Window:CreateTab("Misc")
 local Player = Window:CreateTab("Player")
+local Visuals = Window:CreateTab("Visuals")
 local Other = Window:CreateTab("Other")
 
 -- FOV
@@ -1256,7 +1257,7 @@ local function DisableNameProtect()
     end
 end
 
---TOGGLE
+--// TOGGLE
 
 Misc:CreateToggle({
 
@@ -1274,7 +1275,7 @@ Misc:CreateToggle({
     end,
 })
 
---
+--// DROPDOWN
 
 Misc:CreateDropdown({
 
@@ -1301,7 +1302,7 @@ Misc:CreateDropdown({
     end,
 })
 
---
+--// AUTO ENABLE
 
 task.spawn(function()
     EnableNameProtect()
@@ -1394,9 +1395,243 @@ Player:CreateToggle({
     end,
 })
 
+--HEADLESS & KORBLOX
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local HeadlessEnabled = false
+local KorbloxEnabled = false
+
+local HEADLESS_MESH_ID   = "rbxassetid://1095708"
+local KORBLOX_MESH_ID    = "rbxassetid://101851696"
+local KORBLOX_TEXTURE_ID = "rbxassetid://101851254"
+local DARK_GREY          = Color3.fromRGB(64, 64, 64)
 
 
+local originalR6Color = nil
 
+
+---
+
+local function removeFace(head)
+    local face = head:FindFirstChild("face")
+    if face and face:IsA("Decal") then
+        face:Destroy()
+    end
+end
+
+local function applyHeadless(head)
+    if not head or not HeadlessEnabled then return end
+    
+    head.Transparency = 1
+    head.CanCollide   = false
+    
+    removeFace(head)
+    
+    for _, child in ipairs(head:GetChildren()) do
+        if child:IsA("SpecialMesh") and child.MeshId == HEADLESS_MESH_ID then
+            child:Destroy()
+        end
+    end
+
+    local mesh = Instance.new("SpecialMesh")
+    mesh.MeshType = Enum.MeshType.FileMesh
+    mesh.MeshId   = HEADLESS_MESH_ID
+    mesh.Scale    = Vector3.new(0.001, 0.001, 0.001)
+    mesh.Parent   = head
+    
+    local transConn
+    transConn = head:GetPropertyChangedSignal("Transparency"):Connect(function()
+        if HeadlessEnabled and head.Transparency ~= 1 then
+            head.Transparency = 1
+        end
+    end)
+    
+    head.ChildAdded:Connect(function(child)
+        if HeadlessEnabled and child.Name == "face" and child:IsA("Decal") then
+            child:Destroy()
+        end
+    end)
+end
+
+
+local function revertHeadless(character)
+    if not character then return end
+    local head = character:FindFirstChild("Head")
+    if not head then return end
+
+    head.Transparency = 0 -- Orijinal kafayı görünür yap
+    
+   
+    for _, child in ipairs(head:GetChildren()) do
+        if child:IsA("SpecialMesh") and child.MeshId == HEADLESS_MESH_ID then
+            child:Destroy()
+        end
+    end
+end
+
+
+---
+
+local function applyKorbloxR6(rightLeg)
+    if not rightLeg or not KorbloxEnabled then return end
+    
+    if not originalR6Color then
+        originalR6Color = rightLeg.Color
+    end
+    
+    for _, child in rightLeg:GetChildren() do
+        if child:IsA("SpecialMesh") or child:IsA("CharacterMesh") then
+            child:Destroy()
+        end
+    end
+    
+    rightLeg.Color = DARK_GREY
+    
+    local colorConn = rightLeg:GetPropertyChangedSignal("Color"):Connect(function()
+        if KorbloxEnabled and rightLeg.Color ~= DARK_GREY then
+            rightLeg.Color = DARK_GREY
+        end
+    end)
+    
+    local mesh = Instance.new("SpecialMesh")
+    mesh.MeshType  = Enum.MeshType.FileMesh
+    mesh.MeshId    = KORBLOX_MESH_ID
+    mesh.TextureId = KORBLOX_TEXTURE_ID
+    mesh.Scale     = Vector3.new(1, 1, 1)
+    mesh.Parent    = rightLeg
+end
+
+local function applyKorbloxR15(character)
+    if not KorbloxEnabled then return end
+    local upper = character:FindFirstChild("RightUpperLeg")
+    if not upper then return end
+    
+    upper.Transparency = 1
+    local lower = character:FindFirstChild("RightLowerLeg")
+    local foot  = character:FindFirstChild("RightFoot")
+    if lower then lower.Transparency = 1 end
+    if foot  then foot.Transparency  = 1  end
+    
+    if character:FindFirstChild("KorbloxRightLeg") then return end
+
+    local korbloxPart = Instance.new("Part")
+    korbloxPart.Name       = "KorbloxRightLeg"
+    korbloxPart.Size       = Vector3.new(1, 2, 1)
+    korbloxPart.Color      = DARK_GREY
+    korbloxPart.CanCollide = false
+    korbloxPart.Parent     = character
+    
+    local mesh = Instance.new("SpecialMesh")
+    mesh.MeshType  = Enum.MeshType.FileMesh
+    mesh.MeshId    = KORBLOX_MESH_ID
+    mesh.TextureId = KORBLOX_TEXTURE_ID
+    mesh.Scale     = Vector3.new(1, 1, 1)
+    mesh.Parent    = korbloxPart
+    
+    local weld = Instance.new("Weld")
+    weld.Part0 = upper
+    weld.Part1 = korbloxPart
+    weld.C0    = CFrame.new(0, -0.5, 0) * CFrame.Angles(0, 0, 0)  
+    weld.Parent = korbloxPart
+end
+
+
+local function revertKorblox(character)
+    if not character then return end
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+
+    if humanoid.RigType == Enum.HumanoidRigType.R15 then
+        local upper = character:FindFirstChild("RightUpperLeg")
+        local lower = character:FindFirstChild("RightLowerLeg")
+        local foot  = character:FindFirstChild("RightFoot")
+
+        
+        if upper then upper.Transparency = 0 end
+        if lower then lower.Transparency = 0 end
+        if foot  then foot.Transparency = 0 end
+
+        
+        local kLeg = character:FindFirstChild("KorbloxRightLeg")
+        if kLeg then kLeg:Destroy() end
+
+    elseif humanoid.RigType == Enum.HumanoidRigType.R6 then
+        local rightLeg = character:FindFirstChild("Right Leg")
+        if rightLeg then
+            for _, child in ipairs(rightLeg:GetChildren()) do
+                if child:IsA("SpecialMesh") and child.MeshId == KORBLOX_MESH_ID then
+                    child:Destroy()
+                end
+            end
+            if originalR6Color then
+                rightLeg.Color = originalR6Color
+            end
+        end
+    end
+end
+
+
+----
+
+local function refreshCharacter()
+    local character = player.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+
+    if HeadlessEnabled then
+        local head = character:FindFirstChild("Head")
+        if head then applyHeadless(head) end
+    end
+
+    if KorbloxEnabled then
+        if humanoid.RigType == Enum.HumanoidRigType.R6 then
+            local rightLeg = character:FindFirstChild("Right Leg")
+            if rightLeg then applyKorbloxR6(rightLeg) end
+        elseif humanoid.RigType == Enum.HumanoidRigType.R15 then
+            applyKorbloxR15(character)
+        end
+    end
+end
+
+
+player.CharacterAdded:Connect(function()
+    task.wait(0.5) 
+    refreshCharacter()
+end)
+
+---
+
+Visuals:CreateToggle({
+    Name = "Headless",
+    CurrentValue = false,
+    Flag = "HeadlessToggle",
+    Callback = function(Value)
+        HeadlessEnabled = Value
+        if Value then
+            refreshCharacter() 
+        else
+            revertHeadless(player.Character) 
+        end
+    end,
+})
+
+Visuals:CreateToggle({
+    Name = "Korblox",
+    CurrentValue = false,
+    Flag = "KorbloxToggle",
+    Callback = function(Value)
+        KorbloxEnabled = Value
+        if Value then
+            refreshCharacter() 
+        else
+            revertKorblox(player.Character) 
+        end
+    end,
+})
 
 
 ----------------------
