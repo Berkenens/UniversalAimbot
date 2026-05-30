@@ -1633,6 +1633,170 @@ Visuals:CreateToggle({
     end,
 })
 
+---AccessoryAdder-----
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+
+local SavedAccessories = {}
+
+local function attachAccessory(char, accessory)
+    local handle = accessory:FindFirstChild("Handle")
+    if not handle then return end
+
+    local targetAttachment, accAttachment
+    
+    for _, part in ipairs(char:GetChildren()) do
+        if part:IsA("BasePart") then
+            for _, att in ipairs(part:GetChildren()) do
+                if att:IsA("Attachment") then
+                    local match = handle:FindFirstChild(att.Name)
+                    if match and match:IsA("Attachment") then
+                        targetAttachment = att
+                        accAttachment = match
+                        break
+                    end
+                end
+            end
+        end
+        if targetAttachment then break end
+    end
+
+    if targetAttachment and accAttachment then
+        handle.CFrame = targetAttachment.WorldCFrame * accAttachment.CFrame:Inverse()
+    else
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if root then
+            handle.CFrame = root.CFrame
+        end
+    end
+
+    local weld = Instance.new("WeldConstraint")
+    weld.Part0 = handle
+    weld.Part1 = (targetAttachment and targetAttachment.Parent) or char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
+    weld.Parent = handle
+
+    accessory.Parent = char
+end
+
+local function equipItemById(itemId, isRespawn)
+    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    
+    local success, objects = pcall(function()
+        return game:GetObjects("rbxassetid://" .. tostring(itemId))
+    end)
+
+    if success and objects and objects[1] then
+        local item = objects[1]
+        
+        if item:IsA("Accessory") or item:IsA("Hat") then
+           
+            item:SetAttribute("FakeAccessory", true)
+            
+            attachAccessory(char, item)
+            
+            
+            if not isRespawn then
+                
+                local alreadySaved = false
+                for _, savedId in ipairs(SavedAccessories) do
+                    if savedId == itemId then alreadySaved = true break end
+                end
+                
+                if not alreadySaved then
+                    table.insert(SavedAccessories, itemId)
+                end
+            end
+            
+            return true
+        else
+            item:Destroy() 
+            return false
+        end
+    else
+        return false
+    end
+end
+
+
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+   
+    task.wait(1) 
+    for _, itemId in ipairs(SavedAccessories) do
+        equipItemById(itemId, true)
+    end
+end)
+
+
+
+
+
+
+
+local targetItemId = ""
+
+Visuals:CreateInput({
+    Name = "Put ID",
+    PlaceholderText = "Exmp: 1028713",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(text)
+        targetItemId = text
+    end
+})
+
+Visuals:CreateButton({
+    Name = "Apply",
+    Callback = function()
+        local id = tonumber(targetItemId)
+        if id then
+            local success = equipItemById(id, false)
+            if success then
+                Rayfield:Notify({
+                    Title = "Success",
+                    Content = "Accessory Added",
+                    Duration = 3
+                })
+            else
+                Rayfield:Notify({
+                    Title = "Error",
+                    Content = "Couldnt Load Check If Id Is Correct Dont Put Clothing IDS",
+                    Duration = 3
+                })
+            end
+        else
+            Rayfield:Notify({
+                Title = "Error",
+                Content = "Error Only Put Number",
+                Duration = 3
+            })
+        end
+    end
+})
+
+Visuals:CreateButton({
+    Name = "Clear Accessorries",
+    Callback = function()
+        
+        SavedAccessories = {}
+        
+        
+        local char = LocalPlayer.Character
+        if char then
+            for _, child in ipairs(char:GetChildren()) do
+                if child:GetAttribute("FakeAccessory") then
+                    child:Destroy()
+                end
+            end
+        end
+        
+        Rayfield:Notify({
+            Title = "Success",
+            Content = "Accessorries Cleared",
+            Duration = 3
+        })
+    end
+})
 
 ----------------------
 Rayfield:Notify({
