@@ -72,14 +72,14 @@ local Window = Rayfield:CreateWindow({
     },
 })
 
-local Aimbot = Window:CreateTab("Aimbot")
-local ESP = Window:CreateTab("ESP")
-local TargetTab = Window:CreateTab("Target")
-local Allied = Window:CreateTab("Allied")
-local Misc = Window:CreateTab("Misc")
-local Player = Window:CreateTab("Player")
-local Visuals = Window:CreateTab("Visuals")
-local Other = Window:CreateTab("Other")
+local Aimbot = Window:CreateTab("Aimbot", "crosshair")
+local ESP = Window:CreateTab("ESP", "eye")
+local TargetTab = Window:CreateTab("Target", "crosshair")
+local Allied = Window:CreateTab("Allied", "user")
+local Misc = Window:CreateTab("Misc", "droplets")
+local Player = Window:CreateTab("Player", "user")
+local Visuals = Window:CreateTab("Visuals", "eye")
+local Other = Window:CreateTab("Other", "settings")
 
 -- FOV
 local fovCircle = Drawing.new("Circle")
@@ -685,6 +685,13 @@ Other:CreateButton({
     Name = "Infinite Yield",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+    end
+})
+
+Other:CreateButton({
+    Name = "DeSync",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/DeSync/refs/heads/main/maingui.lua"))()
     end
 })
 
