@@ -903,7 +903,7 @@ Misc:CreateSlider({
     Name = "Hitbox Expander",
     Range = {1, 70},
     Increment = 1,
-    Suffix = "Size",
+    Suffix = "",
     CurrentValue = 5,
     Flag = "HitboxSizeSlider",
 
@@ -1018,7 +1018,7 @@ Misc:CreateSlider({
     Name = "Speed Value",
     Range = {1, 50},
     Increment = 1,
-    Suffix = "Speed",
+    Suffix = "",
     CurrentValue = 1,
     Flag = "TPWalkSpeedSlider",
 
