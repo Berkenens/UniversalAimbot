@@ -77,6 +77,7 @@ local ESP = Window:CreateTab("ESP")
 local TargetTab = Window:CreateTab("Target")
 local Allied = Window:CreateTab("Allied")
 local Misc = Window:CreateTab("Misc")
+local Player = Window:CreateTab("Player")
 local Other = Window:CreateTab("Other")
 
 -- FOV
@@ -1040,6 +1041,365 @@ LocalPlayer.CharacterAdded:Connect(function()
 end)
 
 
+--NAME PROTECTION
+
+local CONFIG = {
+    FakeName = "NameProtected",
+    FakeDisplay = "NameProtected"
+}
+
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+
+local LocalPlayer = Players.LocalPlayer
+
+local RealName = LocalPlayer.Name
+local RealDisplay = LocalPlayer.DisplayName
+
+local NameProtectEnabled = true
+local NameProtectMode = "Only Me"
+
+local Connections = {}
+
+local function AddConnection(Connection)
+    table.insert(Connections, Connection)
+end
+
+local function DisconnectAll()
+
+    for _, Connection in ipairs(Connections) do
+
+        if Connection then
+            Connection:Disconnect()
+        end
+    end
+
+    table.clear(Connections)
+end
+
+local function ReplaceNames(Text)
+
+    if NameProtectMode == "Only Me" then
+
+        Text = Text:gsub(RealName, CONFIG.FakeName)
+        Text = Text:gsub(RealDisplay, CONFIG.FakeDisplay)
+
+    elseif NameProtectMode == "All Players" then
+
+        for _, Player in ipairs(Players:GetPlayers()) do
+
+            Text = Text:gsub(
+                Player.Name,
+                CONFIG.FakeName
+            )
+
+            Text = Text:gsub(
+                Player.DisplayName,
+                CONFIG.FakeDisplay
+            )
+        end
+    end
+
+    return Text
+end
+
+local function SpoofText(Object)
+
+    if not NameProtectEnabled then
+        return
+    end
+
+    local OriginalText = Object.Text
+    local NewText = ReplaceNames(OriginalText)
+
+    if NewText ~= OriginalText then
+        Object.Text = NewText
+    end
+end
+
+local function MonitorObject(Object)
+
+    if not (
+        Object:IsA("TextLabel")
+        or Object:IsA("TextButton")
+        or Object:IsA("TextBox")
+    ) then
+        return
+    end
+
+    SpoofText(Object)
+
+    AddConnection(
+        Object:GetPropertyChangedSignal("Text"):Connect(function()
+
+            if NameProtectEnabled then
+                SpoofText(Object)
+            end
+        end)
+    )
+end
+
+local function MonitorCharacter(Character)
+
+    local Humanoid = Character:WaitForChild("Humanoid", 10)
+
+    if not Humanoid then
+        return
+    end
+
+    if NameProtectMode == "Only Me" then
+
+        Humanoid.DisplayName = CONFIG.FakeDisplay
+
+        AddConnection(
+            Humanoid:GetPropertyChangedSignal("DisplayName"):Connect(function()
+
+                if NameProtectEnabled and Humanoid.DisplayName ~= CONFIG.FakeDisplay then
+                    Humanoid.DisplayName = CONFIG.FakeDisplay
+                end
+            end)
+        )
+    end
+end
+
+local function RefreshEverything()
+
+    if not NameProtectEnabled then
+        return
+    end
+
+    for _, Object in ipairs(LocalPlayer.PlayerGui:GetDescendants()) do
+
+        if Object:IsA("TextLabel")
+        or Object:IsA("TextButton")
+        or Object:IsA("TextBox") then
+
+            SpoofText(Object)
+        end
+    end
+
+    pcall(function()
+
+        for _, Object in ipairs(CoreGui:GetDescendants()) do
+
+            if Object:IsA("TextLabel")
+            or Object:IsA("TextButton")
+            or Object:IsA("TextBox") then
+
+                SpoofText(Object)
+            end
+        end
+    end)
+
+    if LocalPlayer.Character then
+
+        local Humanoid =
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+
+        if Humanoid and NameProtectMode == "Only Me" then
+            Humanoid.DisplayName = CONFIG.FakeDisplay
+        end
+    end
+end
+
+local function EnableNameProtect()
+
+    DisconnectAll()
+
+    NameProtectEnabled = true
+
+    for _, Object in ipairs(LocalPlayer.PlayerGui:GetDescendants()) do
+        MonitorObject(Object)
+    end
+
+    AddConnection(
+        LocalPlayer.PlayerGui.DescendantAdded:Connect(MonitorObject)
+    )
+
+    pcall(function()
+
+        for _, Object in ipairs(CoreGui:GetDescendants()) do
+            MonitorObject(Object)
+        end
+
+        AddConnection(
+            CoreGui.DescendantAdded:Connect(MonitorObject)
+        )
+    end)
+
+    if LocalPlayer.Character then
+        MonitorCharacter(LocalPlayer.Character)
+    end
+
+    AddConnection(
+        LocalPlayer.CharacterAdded:Connect(MonitorCharacter)
+    )
+
+    RefreshEverything()
+end
+
+local function DisableNameProtect()
+
+    NameProtectEnabled = false
+
+    DisconnectAll()
+
+    local Character = LocalPlayer.Character
+
+    if Character then
+
+        local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+
+        if Humanoid then
+            Humanoid.DisplayName = RealDisplay
+        end
+    end
+end
+
+--TOGGLE
+
+Misc:CreateToggle({
+
+    Name = "Name Protect",
+    CurrentValue = true,
+    Flag = "NameProtectToggle",
+
+    Callback = function(Value)
+
+        if Value then
+            EnableNameProtect()
+        else
+            DisableNameProtect()
+        end
+    end,
+})
+
+--
+
+Misc:CreateDropdown({
+
+    Name = "Protection Mode",
+
+    Options = {
+        "Only Me",
+        "All Players"
+    },
+
+    CurrentOption = {
+        "Only Me"
+    },
+
+    Flag = "NameProtectMode",
+
+    Callback = function(Options)
+
+        NameProtectMode = Options[1]
+
+        if NameProtectEnabled then
+            RefreshEverything()
+        end
+    end,
+})
+
+--
+
+task.spawn(function()
+    EnableNameProtect()
+end)
+
+
+------Player--------
+
+--INF JUMP
+
+local InfiniteJumpEnabled = false
+
+game:GetService("UserInputService").JumpRequest:Connect(function()
+    if InfiniteJumpEnabled then
+        local hum = game.Players.LocalPlayer.Character 
+            and game.Players.LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+            
+        if hum then
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+Player:CreateToggle({
+    Name = "Infinite Jump",
+    CurrentValue = false,
+    Flag = "Toggle_InfiniteJump",
+    
+    Callback = function(Value)
+        InfiniteJumpEnabled = Value
+    end,
+})
+
+--Noclip
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+
+local NoclipEnabled = false
+local NoclipConnection = nil
+
+--
+local function SetNoclip(state)
+    NoclipEnabled = state
+
+    
+    if NoclipConnection then
+        NoclipConnection:Disconnect()
+        NoclipConnection = nil
+    end
+
+    local Character = LocalPlayer.Character
+    if not Character then return end
+
+    if not NoclipEnabled then
+        
+        for _, part in ipairs(Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+        return
+    end
+
+  
+    NoclipConnection = RunService.Stepped:Connect(function()
+        local char = LocalPlayer.Character
+        if not char then return end
+
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end)
+end
+
+
+-- 
+
+Player:CreateToggle({
+    Name = "Noclip",
+    CurrentValue = false,
+    Flag = "Toggle_Noclip",
+
+    Callback = function(Value)
+        SetNoclip(Value)
+    end,
+})
+
+
+
+
+
+
+----------------------
 Rayfield:Notify({
     Name = "Aimbot Loaded",
     Content = "Script Loaded Successfully!",
