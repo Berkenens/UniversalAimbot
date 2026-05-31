@@ -1550,7 +1550,7 @@ local function revertHeadless(character)
     local head = character:FindFirstChild("Head")
     if not head then return end
 
-    head.Transparency = 0 -- Orijinal kafayı görünür yap
+    head.Transparency = 0 
     
    
     for _, child in ipairs(head:GetChildren()) do
@@ -1826,8 +1826,8 @@ end)
 local targetItemId = ""
 
 Visuals:CreateInput({
-    Name = "Put ID",
-    PlaceholderText = "Exmp: 1028713",
+    Name = "Accessory Adder",
+    PlaceholderText = "Put ID Exmp: 1028713",
     RemoveTextAfterFocusLost = false,
     Callback = function(text)
         targetItemId = text
