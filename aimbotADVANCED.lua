@@ -1098,7 +1098,7 @@ local function SetClickTP(state)
 end
 
 
-Misc:CreateToggle({
+Player:CreateToggle({
     Name = "Click TP",
     CurrentValue = false,
     Flag = "Toggle_ClickTP",
