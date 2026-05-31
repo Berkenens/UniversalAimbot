@@ -675,6 +675,13 @@ ESP:CreateColorPicker({
 
 -- Other Tabs
 Other:CreateButton({
+    Name = "Aimbot Loader",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/UniversalAimbot/refs/heads/main/guiLOADER.lua"))()
+    end
+})
+
+Other:CreateButton({
     Name = "FPS GUI",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/BloxFruitsFPSBOOSTER/refs/heads/main/bfFPSbooster.lua"))()
