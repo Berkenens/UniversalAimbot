@@ -73,7 +73,7 @@ local Window = Rayfield:CreateWindow({
 })
 
 local Aimbot = Window:CreateTab("Aimbot", "crosshair")
-local HitboxTab = Window:CreateTab("Hitbox", "square")
+local Hitbox = Window:CreateTab("Hitbox", "square")
 local ESP = Window:CreateTab("ESP", "eye")
 local TargetTab = Window:CreateTab("Target", "crosshair")
 local Allied = Window:CreateTab("Allied", "user")
