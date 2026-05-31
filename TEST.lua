@@ -73,6 +73,7 @@ local Window = Rayfield:CreateWindow({
 })
 
 local Aimbot = Window:CreateTab("Aimbot", "crosshair")
+local HitboxTab = Window:CreateTab("Hitbox", "square")
 local ESP = Window:CreateTab("ESP", "eye")
 local TargetTab = Window:CreateTab("Target", "crosshair")
 local Allied = Window:CreateTab("Allied", "user")
@@ -675,6 +676,13 @@ ESP:CreateColorPicker({
 
 -- Other Tabs
 Other:CreateButton({
+    Name = "Aimbot Loader",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/UniversalAimbot/refs/heads/main/guiLOADER.lua"))()
+    end
+})
+
+Other:CreateButton({
     Name = "FPS GUI",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/BloxFruitsFPSBOOSTER/refs/heads/main/bfFPSbooster.lua"))()
@@ -893,7 +901,7 @@ end)
 
 -- 
 
-Misc:CreateToggle({
+Hitbox:CreateToggle({
 
     Name = "Hitbox",
     CurrentValue = false,
@@ -907,7 +915,7 @@ Misc:CreateToggle({
     end,
 })
 
-Misc:CreateSlider({
+Hitbox:CreateSlider({
 
     Name = "Hitbox Expander",
     Range = {1, 70},
@@ -926,7 +934,7 @@ Misc:CreateSlider({
     end,
 })
 
-Misc:CreateSlider({
+Hitbox:CreateSlider({
 
     Name = "Hitbox Transparency",
     Range = {0, 100},
@@ -1550,7 +1558,7 @@ local function revertHeadless(character)
     local head = character:FindFirstChild("Head")
     if not head then return end
 
-    head.Transparency = 0 -- Orijinal kafayı görünür yap
+    head.Transparency = 0 
     
    
     for _, child in ipairs(head:GetChildren()) do
@@ -1826,8 +1834,8 @@ end)
 local targetItemId = ""
 
 Visuals:CreateInput({
-    Name = "Put ID",
-    PlaceholderText = "Exmp: 1028713",
+    Name = "Accessory Adder",
+    PlaceholderText = "Put ID Exmp: 1028713",
     RemoveTextAfterFocusLost = false,
     Callback = function(text)
         targetItemId = text
