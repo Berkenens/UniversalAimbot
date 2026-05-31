@@ -16,13 +16,13 @@ local Loader = Window:CreateTab("Loader", "copy")
 Loader:CreateButton({
     Name = "Aimbot Advanced",
     Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/UniversalAimbot/refs/heads/main/aimbotADVANCED"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/UniversalAimbot/refs/heads/main/aimbotADVANCED.lua"))()
     end
 })
 
 Loader:CreateButton({
     Name = "Aimbot Lite",
     Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/UniversalAimbot/refs/heads/main/aimbotLITE"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/UniversalAimbot/refs/heads/main/aimbotLITE.lua"))()
     end
 })
