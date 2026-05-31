@@ -68,7 +68,7 @@ local Window = Rayfield:CreateWindow({
     ConfigurationSaving = {
         Enabled = true,
         FolderName = "UniversalAimbot",
-        FileName = "byAgreed"
+        FileName = "perseus"
     },
 })
 
