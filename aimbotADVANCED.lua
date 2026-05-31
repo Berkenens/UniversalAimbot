@@ -73,6 +73,7 @@ local Window = Rayfield:CreateWindow({
 })
 
 local Aimbot = Window:CreateTab("Aimbot", "crosshair")
+local HitboxTab = Window:CreateTab("Hitbox", "square")
 local ESP = Window:CreateTab("ESP", "eye")
 local TargetTab = Window:CreateTab("Target", "crosshair")
 local Allied = Window:CreateTab("Allied", "user")
@@ -900,7 +901,7 @@ end)
 
 -- 
 
-Misc:CreateToggle({
+Hitbox:CreateToggle({
 
     Name = "Hitbox",
     CurrentValue = false,
@@ -914,7 +915,7 @@ Misc:CreateToggle({
     end,
 })
 
-Misc:CreateSlider({
+Hitbox:CreateSlider({
 
     Name = "Hitbox Expander",
     Range = {1, 70},
@@ -933,7 +934,7 @@ Misc:CreateSlider({
     end,
 })
 
-Misc:CreateSlider({
+Hitbox:CreateSlider({
 
     Name = "Hitbox Transparency",
     Range = {0, 100},
