@@ -14,7 +14,7 @@ local Window = Rayfield:CreateWindow({
 local Loader = Window:CreateTab("Loader", "copy")
 
 Loader:CreateButton({
-    Name = "FPS GUI",
+    Name = "Aimbot Advanced",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/UniversalAimbot/refs/heads/main/aimbotADVANCED"))()
     end
