@@ -20,7 +20,7 @@ local smoothing = 1
 local aimbotEnabled = false 
 local stickyAimEnabled = true
 local wallCheck = false
-local teamCheck = true
+local teamCheck = false
 
 -- 360 
 local mode360Enabled = true
@@ -30,7 +30,7 @@ local healthCheck = false
 local minHealth = 6000 
 
 local prioritizeLowHP = true
-local maxDistance = 300 
+local maxDistance = 460 
 
 
 local currentTarget = nil
@@ -73,7 +73,7 @@ local Window = Rayfield:CreateWindow({
 })
 
 local Aimbot = Window:CreateTab("Aimbot", "crosshair")
-local HitboxTab = Window:CreateTab("Hitbox", "square")
+local Hitbox = Window:CreateTab("Hitbox", "square")
 local ESP = Window:CreateTab("ESP", "eye")
 local TargetTab = Window:CreateTab("Target", "crosshair")
 local Allied = Window:CreateTab("Allied", "user")
@@ -524,7 +524,7 @@ Aimbot:CreateSlider({
     Name = "Max Distance",
     Range = {0,5000},
     Increment = 5,
-    CurrentValue = 300, 
+    CurrentValue = 460, 
     Flag = "MaxDistance",
     Callback = function(v)
         maxDistance = v
@@ -576,7 +576,7 @@ Aimbot:CreateToggle({
 
 Aimbot:CreateToggle({
     Name = "Team Check",
-    CurrentValue = true,
+    CurrentValue = false,
     Flag = "TeamCheck",
     Callback = function(v)
         teamCheck = v
@@ -793,7 +793,7 @@ local LocalPlayer = Players.LocalPlayer
 --
 
 local HitboxEnabled = false
-local HitboxSize = 5
+local HitboxSize = 16
 local HitboxTransparency = 0.4
 
 --
@@ -921,7 +921,7 @@ Hitbox:CreateSlider({
     Range = {1, 70},
     Increment = 1,
     Suffix = "",
-    CurrentValue = 5,
+    CurrentValue = 16,
     Flag = "HitboxSizeSlider",
 
     Callback = function(Value)
@@ -1098,7 +1098,7 @@ local function SetClickTP(state)
 end
 
 
-Misc:CreateToggle({
+Player:CreateToggle({
     Name = "Click TP",
     CurrentValue = false,
     Flag = "Toggle_ClickTP",
