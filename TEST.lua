@@ -784,174 +784,99 @@ Misc:CreateToggle({
     end,
 })
 
---HITBOX EXPANDER
+
 
 local Players = game:GetService("Players")
-
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
---
 
 local HitboxEnabled = false
 local HitboxSize = 16
 local HitboxTransparency = 0.4
+local DEFAULT_SIZE = Vector3.new(2, 1, 1)
 
---
 
-local DEFAULT_SIZE = Vector3.new(2,1,1)
-
--- 
-
-local function GetRoot(character)
-
-    return character and character:FindFirstChild("HumanoidRootPart")
-end
-
-local function ApplyHitbox(player)
-
-    if player == LocalPlayer then
-        return
-    end
-
-    local character = player.Character
-    if not character then
-        return
-    end
-
-    local root = GetRoot(character)
-    if not root then
-        return
-    end
-
-    if HitboxEnabled then
-
-        local size = HitboxSize
-
-        if size <= 1 then
-            root.Size = DEFAULT_SIZE
-        else
-            root.Size = Vector3.new(size,size,size)
-        end
-
-        root.Transparency = HitboxTransparency
-        root.CanCollide = false
-
-    else
-
-        root.Size = DEFAULT_SIZE
-        root.Transparency = 1
-        root.CanCollide = false
-    end
-end
-
-local function RefreshHitboxes()
-
+local function ApplyHitbox()
+    if not HitboxEnabled then return end
+    
     for _, player in ipairs(Players:GetPlayers()) do
-
-        if player ~= LocalPlayer then
-            ApplyHitbox(player)
+        if player ~= LocalPlayer and player.Character then
+            local root = player.Character:FindFirstChild("HumanoidRootPart")
+            if root then
+                
+                root.Size = Vector3.new(HitboxSize, HitboxSize, HitboxSize)
+                root.Transparency = HitboxTransparency
+                root.CanCollide = false
+            end
         end
     end
 end
 
-local function SetupCharacter(player, character)
 
-    local root = character:WaitForChild("HumanoidRootPart", 10)
-
-    if not root then
-        return
+local function ResetHitboxes()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local root = player.Character:FindFirstChild("HumanoidRootPart")
+            if root then
+                root.Size = DEFAULT_SIZE
+                root.Transparency = 1
+                root.CanCollide = false
+            end
+        end
     end
-
-    task.wait(0.15)
-
-    ApplyHitbox(player)
 end
 
-local function SetupPlayer(player)
 
-    if player == LocalPlayer then
-        return
+local lastUpdate = 0
+RunService.Heartbeat:Connect(function(deltaTime)
+    if not HitboxEnabled then return end
+    
+    lastUpdate = lastUpdate + deltaTime
+    if lastUpdate >= 5 then -- loop config every 5 sec now
+        ApplyHitbox()
+        lastUpdate = 0
     end
-
-    if player.Character then
-        task.spawn(function()
-            SetupCharacter(player, player.Character)
-        end)
-    end
-
-    player.CharacterAdded:Connect(function(character)
-
-        task.spawn(function()
-            SetupCharacter(player, character)
-        end)
-    end)
-end
-
--- 
-
-for _, player in ipairs(Players:GetPlayers()) do
-    SetupPlayer(player)
-end
-
--- 
-
-Players.PlayerAdded:Connect(function(player)
-    SetupPlayer(player)
 end)
 
--- 
 
 Hitbox:CreateToggle({
-
     Name = "Hitbox",
     CurrentValue = false,
     Flag = "HitboxToggle",
-
     Callback = function(Value)
-
         HitboxEnabled = Value
-
-        RefreshHitboxes()
-    end,
-})
-
-Hitbox:CreateSlider({
-
-    Name = "Hitbox Expander",
-    Range = {1, 70},
-    Increment = 1,
-    Suffix = "",
-    CurrentValue = 16,
-    Flag = "HitboxSizeSlider",
-
-    Callback = function(Value)
-
-        HitboxSize = Value
-
-        if HitboxEnabled then
-            RefreshHitboxes()
+        if Value then
+            ApplyHitbox() 
+        else
+            ResetHitboxes() 
         end
     end,
 })
 
 Hitbox:CreateSlider({
+    Name = "Hitbox Expander",
+    Range = {1, 70},
+    Increment = 1,
+    CurrentValue = 16,
+    Callback = function(Value)
+        HitboxSize = Value
+        if HitboxEnabled then ApplyHitbox() end
+    end,
+})
 
+Hitbox:CreateSlider({
     Name = "Hitbox Transparency",
     Range = {0, 100},
     Increment = 5,
     Suffix = "%",
     CurrentValue = 40,
-    Flag = "HitboxTransparencySlider",
-
     Callback = function(Value)
-
         HitboxTransparency = Value / 100
-
-        if HitboxEnabled then
-            RefreshHitboxes()
-        end
+        if HitboxEnabled then ApplyHitbox() end
     end,
 })
+
 
 --TPWALK (ANTISTUN)
 
