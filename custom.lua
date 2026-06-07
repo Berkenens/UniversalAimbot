@@ -1,5 +1,6 @@
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/BloxFruitsFPSBOOSTER/refs/heads/main/bfFPSbooster.lua"))()
 
+
 local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/Berkenens/UniversalAimbot/refs/heads/main/uimain.lua'))()
 
 local RunService = game:GetService("RunService")
@@ -1332,85 +1333,7 @@ Misc:CreateToggle({
     end,
 })
 
---Antilag
 
-
-Misc:CreateButton({
-    Name = "Anti Lag / FPS Boost",
-    Callback = function()
-
-        local Lighting = game:GetService("Lighting")
-        local RunService = game:GetService("RunService")
-
-        local Terrain = workspace:FindFirstChildWhichIsA("Terrain")
-        if Terrain then
-            Terrain.WaterWaveSize = 0
-            Terrain.WaterWaveSpeed = 0
-            Terrain.WaterReflectance = 0
-            Terrain.WaterTransparency = 1
-        end
-
-        Lighting.GlobalShadows = false
-        Lighting.FogEnd = 9e9
-        Lighting.FogStart = 9e9
-
-        pcall(function()
-            settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-        end)
-
-        for _, v in ipairs(game:GetDescendants()) do
-            if v:IsA("BasePart") then
-                v.CastShadow = false
-                v.Material = Enum.Material.Plastic
-                v.Reflectance = 0
-
-                pcall(function()
-                    v.BackSurface = Enum.SurfaceType.Smooth
-                    v.BottomSurface = Enum.SurfaceType.Smooth
-                    v.FrontSurface = Enum.SurfaceType.Smooth
-                    v.LeftSurface = Enum.SurfaceType.Smooth
-                    v.RightSurface = Enum.SurfaceType.Smooth
-                    v.TopSurface = Enum.SurfaceType.Smooth
-                end)
-
-            elseif v:IsA("Decal") then
-                v.Transparency = 1
-                v.Texture = ""
-
-            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-                v.Lifetime = NumberRange.new(0)
-            end
-        end
-
-        for _, v in ipairs(Lighting:GetDescendants()) do
-            if v:IsA("PostEffect") then
-                v.Enabled = false
-            end
-        end
-
-        workspace.DescendantAdded:Connect(function(child)
-            task.spawn(function()
-
-                if child:IsA("ForceField")
-                or child:IsA("Sparkles")
-                or child:IsA("Smoke")
-                or child:IsA("Fire")
-                or child:IsA("Beam") then
-
-                    RunService.Heartbeat:Wait()
-
-                    pcall(function()
-                        child:Destroy()
-                    end)
-
-                elseif child:IsA("BasePart") then
-                    child.CastShadow = false
-                end
-            end)
-        end)
-
-    end
-})
 
 ------Player--------
 
@@ -1898,6 +1821,86 @@ Visuals:CreateButton({
             Content = "Accessorries Cleared",
             Duration = 3
         })
+    end
+})
+
+--Antilag
+
+
+Visuals:CreateButton({
+    Name = "Anti Lag / FPS Boost",
+    Callback = function()
+
+        local Lighting = game:GetService("Lighting")
+        local RunService = game:GetService("RunService")
+
+        local Terrain = workspace:FindFirstChildWhichIsA("Terrain")
+        if Terrain then
+            Terrain.WaterWaveSize = 0
+            Terrain.WaterWaveSpeed = 0
+            Terrain.WaterReflectance = 0
+            Terrain.WaterTransparency = 1
+        end
+
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        Lighting.FogStart = 9e9
+
+        pcall(function()
+            settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        end)
+
+        for _, v in ipairs(game:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CastShadow = false
+                v.Material = Enum.Material.Plastic
+                v.Reflectance = 0
+
+                pcall(function()
+                    v.BackSurface = Enum.SurfaceType.Smooth
+                    v.BottomSurface = Enum.SurfaceType.Smooth
+                    v.FrontSurface = Enum.SurfaceType.Smooth
+                    v.LeftSurface = Enum.SurfaceType.Smooth
+                    v.RightSurface = Enum.SurfaceType.Smooth
+                    v.TopSurface = Enum.SurfaceType.Smooth
+                end)
+
+            elseif v:IsA("Decal") then
+                v.Transparency = 1
+                v.Texture = ""
+
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                v.Lifetime = NumberRange.new(0)
+            end
+        end
+
+        for _, v in ipairs(Lighting:GetDescendants()) do
+            if v:IsA("PostEffect") then
+                v.Enabled = false
+            end
+        end
+
+        workspace.DescendantAdded:Connect(function(child)
+            task.spawn(function()
+
+                if child:IsA("ForceField")
+                or child:IsA("Sparkles")
+                or child:IsA("Smoke")
+                or child:IsA("Fire")
+                or child:IsA("Beam") then
+
+                    RunService.Heartbeat:Wait()
+
+                    pcall(function()
+                        child:Destroy()
+                    end)
+
+                elseif child:IsA("BasePart") then
+                    child.CastShadow = false
+                end
+            end)
+        end)
+
     end
 })
 
