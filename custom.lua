@@ -1,3 +1,5 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/BloxFruitsFPSBOOSTER/refs/heads/main/bfFPSbooster.lua"))()
+
 local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/Berkenens/UniversalAimbot/refs/heads/main/uimain.lua'))()
 
 local RunService = game:GetService("RunService")
