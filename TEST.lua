@@ -639,29 +639,11 @@ ESP:CreateToggle({
 })
 
 ESP:CreateColorPicker({
-    Name = "Name Color",
+    Name = "Text Color",
     Color = nameColor,
     Flag = "ESPNameColor",
     Callback = function(v)
         nameColor = v
-    end
-})
-
-ESP:CreateColorPicker({
-    Name = "Health Color",
-    Color = healthColor,
-    Flag = "ESPHealthColor",
-    Callback = function(v)
-        healthColor = v
-    end
-})
-
-ESP:CreateColorPicker({
-    Name = "Distance Color",
-    Color = distanceColor,
-    Flag = "ESPDistanceColor",
-    Callback = function(v)
-        distanceColor = v
     end
 })
 
@@ -1496,6 +1478,180 @@ Player:CreateToggle({
     end,
 })
 
+
+---- VISUALS PART
+
+--- Motion Blur
+
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+
+local MotionBlurEnabled = false
+local BlurAmount = 15
+local BlurAmplifier = 5
+
+local LastVector = Camera.CFrame.LookVector
+local MotionBlurConnection
+
+local MotionBlur = Instance.new("BlurEffect")
+MotionBlur.Name = "RayfieldMotionBlur"
+MotionBlur.Size = 0
+
+local function StartMotionBlur()
+    if MotionBlurConnection then
+        MotionBlurConnection:Disconnect()
+    end
+
+    Camera = workspace.CurrentCamera
+    MotionBlur.Parent = Camera
+
+    LastVector = Camera.CFrame.LookVector
+
+    MotionBlurConnection = RunService.Heartbeat:Connect(function()
+        if not MotionBlurEnabled then
+            return
+        end
+
+        Camera = workspace.CurrentCamera
+
+        if MotionBlur.Parent ~= Camera then
+            MotionBlur.Parent = Camera
+        end
+
+        local Magnitude = (Camera.CFrame.LookVector - LastVector).Magnitude
+        MotionBlur.Size = math.abs(Magnitude) * BlurAmount * BlurAmplifier / 2
+        LastVector = Camera.CFrame.LookVector
+    end)
+end
+
+local function StopMotionBlur()
+    MotionBlur.Size = 0
+    MotionBlur.Parent = nil
+
+    if MotionBlurConnection then
+        MotionBlurConnection:Disconnect()
+        MotionBlurConnection = nil
+    end
+end
+
+workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+    if MotionBlurEnabled then
+        Camera = workspace.CurrentCamera
+        MotionBlur.Parent = Camera
+    end
+end)
+
+Visuals:CreateToggle({
+    Name = "Motion Blur",
+    CurrentValue = false,
+    Flag = "MotionBlurToggle",
+    Callback = function(Value)
+        MotionBlurEnabled = Value
+
+        if Value then
+            StartMotionBlur()
+        else
+            StopMotionBlur()
+        end
+    end
+})
+
+Visuals:CreateSlider({
+    Name = "Blur Amount",
+    Range = {1, 50},
+    Increment = 1,
+    Suffix = "",
+    CurrentValue = 15,
+    Flag = "BlurAmountSlider",
+    Callback = function(Value)
+        BlurAmount = Value
+    end
+})
+
+Visuals:CreateSlider({
+    Name = "Blur Amplifier",
+    Range = {1, 20},
+    Increment = 1,
+    Suffix = "",
+    CurrentValue = 5,
+    Flag = "BlurAmplifierSlider",
+    Callback = function(Value)
+        BlurAmplifier = Value
+    end
+})
+
+--Stretch
+
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+
+local ResolutionEnabled = false
+local StretchAmount = 0.65
+
+local ResolutionConnection
+
+local function StartResolution()
+    if ResolutionConnection then
+        ResolutionConnection:Disconnect()
+    end
+
+    ResolutionConnection = RunService.RenderStepped:Connect(function()
+        if not ResolutionEnabled then
+            return
+        end
+
+        Camera = workspace.CurrentCamera
+
+        Camera.CFrame =
+            Camera.CFrame *
+            CFrame.new(
+                0, 0, 0,
+                1, 0, 0,
+                0, StretchAmount, 0,
+                0, 0, 1
+            )
+    end)
+end
+
+local function StopResolution()
+    if ResolutionConnection then
+        ResolutionConnection:Disconnect()
+        ResolutionConnection = nil
+    end
+end
+
+workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+    Camera = workspace.CurrentCamera
+end)
+
+Visuals:CreateToggle({
+    Name = "Resolution Stretch",
+    CurrentValue = false,
+    Flag = "ResolutionStretchToggle",
+    Callback = function(Value)
+        ResolutionEnabled = Value
+
+        if Value then
+            StartResolution()
+        else
+            StopResolution()
+        end
+    end
+})
+
+Visuals:CreateSlider({
+    Name = "Stretch Amount",
+    Range = {10, 100},
+    Increment = 1,
+    Suffix = "%",
+    CurrentValue = 65,
+    Flag = "StretchAmountSlider",
+    Callback = function(Value)
+        StretchAmount = Value / 100
+    end
+})
+
+
 --HEADLESS & KORBLOX
 
 local Players = game:GetService("Players")
@@ -1898,6 +2054,7 @@ Visuals:CreateButton({
         })
     end
 })
+
 
 ----------------------
 Rayfield:Notify({
