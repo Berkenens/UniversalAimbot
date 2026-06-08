@@ -77,9 +77,10 @@ local Hitbox = Window:CreateTab("Hitbox", "square")
 local ESP = Window:CreateTab("ESP", "eye")
 local TargetTab = Window:CreateTab("Target", "crosshair")
 local Allied = Window:CreateTab("Allied", "user")
-local Misc = Window:CreateTab("Misc", "droplets")
+local Misc = Window:CreateTab("Misc", "droplet")
 local Player = Window:CreateTab("Player", "user")
 local Visuals = Window:CreateTab("Visuals", "eye")
+local Ambience = Window:CreateTab("Ambience", "droplets")
 local Other = Window:CreateTab("Other", "settings")
 
 -- FOV
@@ -1479,7 +1480,7 @@ Player:CreateToggle({
 })
 
 
----- VISUALS PART
+---- VISUALS PART & Ambience
 
 --- Motion Blur
 
@@ -1541,7 +1542,7 @@ workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
     end
 end)
 
-Visuals:CreateToggle({
+Ambience:CreateToggle({
     Name = "Motion Blur",
     CurrentValue = false,
     Flag = "MotionBlurToggle",
@@ -1556,7 +1557,7 @@ Visuals:CreateToggle({
     end
 })
 
-Visuals:CreateSlider({
+Ambience:CreateSlider({
     Name = "Blur Amount",
     Range = {1, 50},
     Increment = 1,
@@ -1568,7 +1569,7 @@ Visuals:CreateSlider({
     end
 })
 
-Visuals:CreateSlider({
+Ambience:CreateSlider({
     Name = "Blur Amplifier",
     Range = {1, 20},
     Increment = 1,
@@ -1579,6 +1580,247 @@ Visuals:CreateSlider({
         BlurAmplifier = Value
     end
 })
+
+
+
+--Rain & ThunderStorm
+---------------------
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local SoundService = game:GetService("SoundService")
+
+local Player = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- 
+local rainEnabled = false
+local thunderEnabled = false
+local rainIntensity = 2
+
+-- 
+local OriginalLighting = {
+    Brightness = Lighting.Brightness,
+    FogColor = Lighting.FogColor,
+    FogStart = Lighting.FogStart,
+    FogEnd = Lighting.FogEnd,
+    OutdoorAmbient = Lighting.OutdoorAmbient,
+    Ambient = Lighting.Ambient
+}
+
+-- save current skybox
+local OriginalSky = Lighting:FindFirstChildOfClass("Sky") and Lighting:FindFirstChildOfClass("Sky"):Clone() or nil
+
+local MaxRainClones = 200 
+local RainPool = {}
+local ActiveRainOffsets = {} 
+local AllSounds = {}
+local MainRain = nil
+local RainFolder = nil
+
+---
+
+-- rain intensity
+local function UpdateRainDensity()
+    if not MainRain then return end
+    
+    local rows = 3 + rainIntensity 
+    local totalNeeded = rows * rows
+    local spacing = 200 / rows 
+    
+    if totalNeeded > MaxRainClones then totalNeeded = MaxRainClones end
+    
+    local newOffsets = {}
+    local halfRow = (rows - 1) / 2
+    local currentIndex = 1
+    
+    for x = 0, rows - 1 do
+        for z = 0, rows - 1 do
+            if currentIndex <= MaxRainClones then
+                local offsetX = (x - halfRow) * spacing
+                local offsetZ = (z - halfRow) * spacing
+                
+                local clone = RainPool[currentIndex]
+                table.insert(newOffsets, {
+                    Model = clone,
+                    Offset = Vector3.new(offsetX, 0, offsetZ)
+                })
+                
+                -- Parçacıkları aktif et
+                for _, obj in ipairs(clone:GetDescendants()) do
+                    if obj:IsA("ParticleEmitter") then
+                        obj.Enabled = rainEnabled
+                    end
+                end
+                currentIndex = currentIndex + 1
+            end
+        end
+    end
+    
+    -- 
+    for i = currentIndex, MaxRainClones do
+        local clone = RainPool[i]
+        clone:PivotTo(CFrame.new(0, 10000, 0)) 
+        for _, obj in ipairs(clone:GetDescendants()) do
+            if obj:IsA("ParticleEmitter") then obj.Enabled = false end
+        end
+    end
+    
+    ActiveRainOffsets = newOffsets
+end
+
+-- 
+local function InitializeRain()
+    if MainRain then return end
+    
+    local success, result = pcall(function() return game:GetObjects("rbxassetid://11552439884")[1] end)
+    if not success or not result then return end
+
+    MainRain = result
+    MainRain.Name = "RealisticRain_Main"
+    MainRain.Parent = workspace
+
+    for _, obj in ipairs(MainRain:GetDescendants()) do
+        if obj:IsA("BasePart") then obj.Anchored = true; obj.CanCollide = false end
+        if obj:IsA("ParticleEmitter") then obj.Enabled = rainEnabled end
+        if obj:IsA("Sound") then table.insert(AllSounds, obj) if not rainEnabled then obj:Stop() end end
+    end
+
+    RainFolder = Instance.new("Folder", workspace)
+    RainFolder.Name = "StormRainSystem"
+
+    for i = 1, MaxRainClones do
+        local Clone = result:Clone()
+        for _, obj in ipairs(Clone:GetDescendants()) do
+            if obj:IsA("BasePart") then obj.Anchored = true; obj.CanCollide = false end
+            if obj:IsA("Sound") or obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then obj:Destroy() end
+            if obj:IsA("ParticleEmitter") then obj.Enabled = false end
+        end
+        Clone.Parent = RainFolder
+        table.insert(RainPool, Clone)
+    end
+    UpdateRainDensity()
+end
+
+-- 
+local function ApplyLighting(state)
+    -- 
+    for _, v in ipairs(Lighting:GetChildren()) do
+        if v:IsA("Sky") then v:Destroy() end
+    end
+
+    if state then
+        -- 
+        Lighting.Brightness = 1.5
+        Lighting.FogColor = Color3.fromRGB(90, 90, 90)
+        Lighting.FogStart = 0; Lighting.FogEnd = 3000
+        Lighting.OutdoorAmbient = Color3.fromRGB(105, 105, 105)
+        Lighting.Ambient = Color3.fromRGB(95, 95, 95)
+        
+        local RainSky = Instance.new("Sky", Lighting)
+        RainSky.SkyboxBk = "http://www.roblox.com/asset/?id=4495864450"
+        RainSky.SkyboxDn = "http://www.roblox.com/asset/?id=4495864887"
+        RainSky.SkyboxFt = "http://www.roblox.com/asset/?id=4495865458"
+        RainSky.SkyboxLf = "http://www.roblox.com/asset/?id=4495866035"
+        RainSky.SkyboxRt = "http://www.roblox.com/asset/?id=4495866584"
+        RainSky.SkyboxUp = "http://www.roblox.com/asset/?id=4495867486"
+    else
+        -- turn origin skybox
+        Lighting.Brightness = OriginalLighting.Brightness
+        Lighting.FogColor = OriginalLighting.FogColor
+        Lighting.FogStart = OriginalLighting.FogStart; Lighting.FogEnd = OriginalLighting.FogEnd
+        Lighting.OutdoorAmbient = OriginalLighting.OutdoorAmbient
+        Lighting.Ambient = OriginalLighting.Ambient
+        
+        if OriginalSky then OriginalSky:Clone().Parent = Lighting end
+    end
+end
+
+-- respawn check
+RunService.RenderStepped:Connect(function()
+    if not rainEnabled then return end
+    if Camera and MainRain then MainRain:PivotTo(Camera.CFrame) end
+
+    local Character = Player.Character
+    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+    
+    if Root then
+        local Center = Root.Position + Vector3.new(0, 120, 0)
+        for _, Data in ipairs(ActiveRainOffsets) do
+            if Data.Model then Data.Model:PivotTo(CFrame.new(Center + Data.Offset)) end
+        end
+    end
+end)
+
+-- thunder
+local ThunderSound = Instance.new("Sound", SoundService)
+ThunderSound.SoundId = "rbxassetid://136909414800877"
+ThunderSound.Volume = 1.2; ThunderSound.RollOffMaxDistance = 100000
+
+task.spawn(function()
+    while true do
+        task.wait(math.random(15, 45))
+        if thunderEnabled and rainEnabled then
+            local OldBright = Lighting.Brightness
+            for i = 1, math.random(2, 5) do
+                Lighting.Brightness = 7; task.wait(0.05)
+                Lighting.Brightness = 1; task.wait(0.05)
+            end
+            ThunderSound:Play(); task.wait(0.5); Lighting.Brightness = OldBright
+        end
+    end
+end)
+
+
+Ambience:CreateToggle({
+    Name = "Rain Ambience",
+    CurrentValue = false,
+    Callback = function(Value)
+        rainEnabled = Value
+        InitializeRain()
+        ApplyLighting(Value)
+        
+        -- 
+        UpdateRainDensity()
+        
+        -- 
+        if MainRain then
+            for _, obj in ipairs(MainRain:GetDescendants()) do
+                if obj:IsA("ParticleEmitter") then obj.Enabled = Value end
+            end
+        end
+        for _, sound in ipairs(AllSounds) do
+            if sound then if Value then sound:Play() else sound:Stop() end end
+        end
+    end,
+})
+
+Ambience:CreateToggle({
+    Name = "Thunder",
+    CurrentValue = false,
+    Callback = function(Value)
+        thunderEnabled = Value
+    end,
+})
+
+Ambience:CreateSlider({
+    Name = "Rain Area Density",
+    Range = {1, 10},
+    Increment = 1,
+    Suffix = "x",
+    CurrentValue = 2,
+    Flag = "RainDensitySlider",
+    Callback = function(Value)
+        rainIntensity = Value
+        if rainEnabled then
+            -- 
+            UpdateRainDensity()
+        end
+    end
+})
+
+
+--------------------
 
 --Stretch
 
