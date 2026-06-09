@@ -686,6 +686,13 @@ Other:CreateButton({
     end
 })
 
+Other:CreateButton({
+    Name = "Shader Gui",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/shaderr/refs/heads/main/shader.lua"))()
+    end
+})
+
 -- AUTO RACE V4
 local AUTO_V4 = false
 local NORMAL_CHECK_INTERVAL = 0.25
@@ -1981,33 +1988,72 @@ Ambience:CreateSlider({
 --------------------
 --- Music 
 
-local MusicEnabled = false
+local MusicEnabled = true
 local MusicConnection = nil
 local Sound = nil
 
+local SoundIds = {
+    "rbxassetid://120102995443063",
+    ---- you can add diffrent songs
+}
+
+local shuffledQueue = {}
+
+local function shuffleQueue()
+    shuffledQueue = {}
+    local pool = {table.unpack(SoundIds)}
+    while #pool > 0 do
+        local i = math.random(1, #pool)
+        table.insert(shuffledQueue, pool[i])
+        table.remove(pool, i)
+    end
+end
+
+local function playNext()
+    if not MusicEnabled then return end
+
+    if #shuffledQueue == 0 then
+        shuffleQueue()
+    end
+
+    local nextId = table.remove(shuffledQueue, 1)
+
+    if Sound then
+        Sound:Stop()
+        Sound:Destroy()
+        Sound = nil
+    end
+
+    Sound = Instance.new("Sound")
+    Sound.SoundId = nextId
+    Sound.Volume = 0.5
+    Sound.Parent = game:GetService("SoundService")
+
+    if MusicConnection then
+        MusicConnection:Disconnect()
+        MusicConnection = nil
+    end
+
+    MusicConnection = Sound.Ended:Connect(function()
+        if MusicEnabled then
+            task.wait(1.55)
+            playNext()
+        end
+    end)
+
+    Sound:Play()
+end
+
 Ambience:CreateToggle({
     Name = "Background Music",
-    CurrentValue = false,
+    CurrentValue = true,
     Flag = "BackgroundMusic",
     Callback = function(Value)
         MusicEnabled = Value
 
         if MusicEnabled then
-            Sound = Instance.new("Sound")
-            Sound.SoundId = "rbxassetid://120102995443063"
-            Sound.Volume = 0.5
-            Sound.Parent = game:GetService("SoundService")
-            Sound:Play()
-
-            MusicConnection = Sound.Ended:Connect(function()
-                if MusicEnabled then
-                    task.wait(1.55)
-                    if MusicEnabled then
-                        Sound:Play()
-                    end
-                end
-            end)
-
+            shuffleQueue()
+            playNext()
         else
             if MusicConnection then
                 MusicConnection:Disconnect()
@@ -2018,11 +2064,27 @@ Ambience:CreateToggle({
                 Sound:Destroy()
                 Sound = nil
             end
+            shuffledQueue = {}
         end
     end
 })
 
+
 Rayfield.Flags.BackgroundMusic:Set(true)
+
+
+Ambience:CreateButton({
+    Name = "Skip Song",
+    Callback = function()
+        if MusicEnabled then
+            if MusicConnection then
+                MusicConnection:Disconnect()
+                MusicConnection = nil
+            end
+            playNext()
+        end
+    end
+})
 
 
 --Stretch
