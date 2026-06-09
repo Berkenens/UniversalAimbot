@@ -1313,6 +1313,164 @@ Misc:CreateToggle({
     end,
 })
 
+-----Rainbow Cursor
+
+
+
+local CursorEnabled = true
+local CursorConnection = nil
+local CursorGUI = nil
+
+Misc:CreateToggle({
+    Name = "Custom Cursor",
+    CurrentValue = true,
+    Flag = "CustomCursor",
+    Callback = function(Value)
+        CursorEnabled = Value
+
+        if CursorEnabled then
+            local Players = game:GetService("Players")
+            local RunService = game:GetService("RunService")
+
+            local player = Players.LocalPlayer
+            local mouse = player:GetMouse()
+
+            local screenGui = Instance.new("ScreenGui")
+            screenGui.Name = "AimSightGUI"
+            screenGui.ResetOnSpawn = false
+            screenGui.Parent = player:WaitForChild("PlayerGui")
+            CursorGUI = screenGui
+
+            local aimContainer = Instance.new("Frame")
+            aimContainer.BackgroundTransparency = 1
+            aimContainer.Size = UDim2.new(0, 25, 0, 25)
+            aimContainer.AnchorPoint = Vector2.new(0.5, 0.5)
+            aimContainer.Parent = screenGui
+
+            local function CreateLine(parent, size, pos)
+                local f = Instance.new("Frame")
+                f.Size = size
+                f.Position = pos
+                f.BorderSizePixel = 0
+                f.ZIndex = 5
+                f.Parent = parent
+
+                local stroke = Instance.new("UIStroke")
+                stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                stroke.Color = Color3.new(0, 0, 0)
+                stroke.Thickness = 1
+                stroke.Parent = f
+
+                return f
+            end
+
+            local topLine    = CreateLine(aimContainer, UDim2.new(0, 3, 0, 25), UDim2.new(0.5, -1.5, 0, 0))
+            local bottomLine = CreateLine(aimContainer, UDim2.new(0, 3, 0, 25), UDim2.new(0.5, -1.5, 1, -25))
+            local leftLine   = CreateLine(aimContainer, UDim2.new(0, 25, 0, 3), UDim2.new(0, 0, 0.5, -1.5))
+            local rightLine  = CreateLine(aimContainer, UDim2.new(0, 25, 0, 3), UDim2.new(1, -25, 0.5, -1.5))
+
+            local textLabel = Instance.new("TextLabel")
+            textLabel.BackgroundTransparency = 1
+            textLabel.Size = UDim2.new(0, 150, 0, 23)
+            textLabel.Font = Enum.Font.Arcade
+            textLabel.TextScaled = true
+            textLabel.Text = "Percy.win"
+            textLabel.ZIndex = 10
+            textLabel.Parent = screenGui
+
+            local textStroke = Instance.new("UIStroke")
+            textStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+            textStroke.Color = Color3.new(0, 0, 0)
+            textStroke.Thickness = 1
+            textStroke.LineJoinMode = Enum.LineJoinMode.Round
+            textStroke.Parent = textLabel
+
+            -- Orijinal script değişkenleri
+            local lineThickness     = 3
+            local baseRotationSpeed = 0.8
+            local pulseSpeed        = 2.5
+            local minLength         = -10
+            local maxLength         = -30
+
+            local t                  = 0
+            local rotationProgress   = 0
+            local currentRotSpeed    = baseRotationSpeed
+            local smoothedRot        = 5
+
+            local function getRainbow(time)
+                local r = math.sin(time * 0.6) * 0.5 + 0.5
+                local g = math.sin(time * 0.6 + 2) * 0.5 + 0.5
+                local b = math.sin(time * 0.6 + 4) * 0.5 + 0.5
+                return Color3.new(r, g, b)
+            end
+
+            local function calcRotSpeed(progress)
+                local slowdownStart    = 0.6
+                local slowdownDuration = 0.35
+                local minSpeed         = 0.3
+                if progress >= slowdownStart then
+                    local sp = (progress - slowdownStart) / slowdownDuration
+                    local ep = sp * sp
+                    local sf = 1 - (ep * (1 - minSpeed))
+                    return baseRotationSpeed * math.max(sf, minSpeed)
+                end
+                return baseRotationSpeed
+            end
+
+            local function smoothPulse(time, speed)
+                local raw = math.sin(time * speed) * 0.5 + 0.5
+                return raw * raw
+            end
+
+            CursorConnection = RunService.RenderStepped:Connect(function(dt)
+                t = t + dt
+
+                aimContainer.Position = UDim2.new(0, mouse.X, 0, mouse.Y)
+                textLabel.Position    = UDim2.new(0, mouse.X - 70, 0, mouse.Y + 50)
+
+                rotationProgress = (rotationProgress + currentRotSpeed * dt) % 1
+                currentRotSpeed  = calcRotSpeed(rotationProgress)
+
+                local targetRot = rotationProgress * 360
+                smoothedRot = smoothedRot + (targetRot - smoothedRot) * 1
+                aimContainer.Rotation = smoothedRot
+
+                local pulse  = smoothPulse(t, pulseSpeed)
+                local curLen = minLength + (maxLength - minLength) * pulse
+
+                topLine.Size    = UDim2.new(0, lineThickness, 0, curLen)
+                bottomLine.Size = UDim2.new(0, lineThickness, 0, curLen)
+                leftLine.Size   = UDim2.new(0, curLen, 0, lineThickness)
+                rightLine.Size  = UDim2.new(0, curLen, 0, lineThickness)
+
+                topLine.Position    = UDim2.new(0.5, -lineThickness / 2, 0, 0)
+                bottomLine.Position = UDim2.new(0.5, -lineThickness / 2, 1, -curLen)
+                leftLine.Position   = UDim2.new(0, 0, 0.5, -lineThickness / 2)
+                rightLine.Position  = UDim2.new(1, -curLen, 0.5, -lineThickness / 2)
+
+                local color = getRainbow(t)
+                topLine.BackgroundColor3    = color
+                bottomLine.BackgroundColor3 = color
+                leftLine.BackgroundColor3   = color
+                rightLine.BackgroundColor3  = color
+                textLabel.TextColor3        = color
+            end)
+
+        else
+            if CursorConnection then
+                CursorConnection:Disconnect()
+                CursorConnection = nil
+            end
+            if CursorGUI then
+                CursorGUI:Destroy()
+                CursorGUI = nil
+            end
+        end
+    end
+})
+
+Rayfield.Flags.CustomCursor:Set(true)
+
 --Antilag
 
 
@@ -1821,6 +1979,48 @@ Ambience:CreateSlider({
 
 
 --------------------
+--- Music 
+
+local MusicEnabled = true
+local MusicConnection = nil
+local Sound = nil
+
+Ambience:CreateToggle({
+    Name = "Background Music",
+    CurrentValue = true,
+    Flag = "BackgroundMusic",
+    Callback = function(Value)
+        MusicEnabled = Value
+
+        if MusicEnabled then
+            Sound = Instance.new("Sound")
+            Sound.SoundId = "rbxassetid://120102995443063"
+            Sound.Volume = 0.5
+            Sound.Parent = game:GetService("SoundService")
+            Sound:Play()
+
+            MusicConnection = Sound.Ended:Connect(function()
+                if MusicEnabled then
+                    Sound:Play()
+                end
+            end)
+
+        else
+            if MusicConnection then
+                MusicConnection:Disconnect()
+                MusicConnection = nil
+            end
+            if Sound then
+                Sound:Stop()
+                Sound:Destroy()
+                Sound = nil
+            end
+        end
+    end
+})
+
+Rayfield.Flags.BackgroundMusic:Set(true)
+
 
 --Stretch
 
@@ -2131,6 +2331,7 @@ Visuals:CreateToggle({
         end
     end,
 })
+
 
 ---AccessoryAdder-----
 
