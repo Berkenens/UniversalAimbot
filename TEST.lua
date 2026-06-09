@@ -1981,13 +1981,13 @@ Ambience:CreateSlider({
 --------------------
 --- Music 
 
-local MusicEnabled = true
+local MusicEnabled = false
 local MusicConnection = nil
 local Sound = nil
 
 Ambience:CreateToggle({
     Name = "Background Music",
-    CurrentValue = true,
+    CurrentValue = false,
     Flag = "BackgroundMusic",
     Callback = function(Value)
         MusicEnabled = Value
@@ -2001,7 +2001,10 @@ Ambience:CreateToggle({
 
             MusicConnection = Sound.Ended:Connect(function()
                 if MusicEnabled then
-                    Sound:Play()
+                    task.wait(1.55)
+                    if MusicEnabled then
+                        Sound:Play()
+                    end
                 end
             end)
 
