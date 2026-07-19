@@ -1392,7 +1392,7 @@ Misc:CreateToggle({
             textStroke.LineJoinMode = Enum.LineJoinMode.Round
             textStroke.Parent = textLabel
 
-            -- Orijinal script değişkenleri
+            ---
             local lineThickness     = 3
             local baseRotationSpeed = 0.8
             local pulseSpeed        = 2.5
@@ -1811,7 +1811,7 @@ local function UpdateRainDensity()
                     Offset = Vector3.new(offsetX, 0, offsetZ)
                 })
                 
-                -- Parçacıkları aktif et
+                -- John Rod
                 for _, obj in ipairs(clone:GetDescendants()) do
                     if obj:IsA("ParticleEmitter") then
                         obj.Enabled = rainEnabled
@@ -1994,7 +1994,7 @@ local Sound = nil
 
 local SoundIds = {
     "rbxassetid://120102995443063",
-    ---- you can add diffrent songs
+    ---- you can add diffrent songs of your choice
 }
 
 local shuffledQueue = {}
