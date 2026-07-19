@@ -1645,6 +1645,17 @@ Player:CreateToggle({
 })
 
 
+---Movement Speed Button
+
+Player:CreateButton({
+    Name = "Speed Gui",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/UniversalAimbot/refs/heads/main/SpeedGui.lua"))()
+    end
+})
+
+
+
 ---- VISUALS PART & Ambience
 
 --- Motion Blur
