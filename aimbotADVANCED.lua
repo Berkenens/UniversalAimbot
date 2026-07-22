@@ -1558,6 +1558,118 @@ Misc:CreateButton({
     end
 })
 
+
+------ Violence Distric Auto Skill Check-------
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local localPlayer = Players.LocalPlayer
+
+local skillCheckEnabled = false
+local connections = {}
+
+local function StartAutoSkillCheck()
+    
+    for _, conn in ipairs(connections) do
+        if conn then conn:Disconnect() end
+    end
+    connections = {}
+
+    local function ConnectSkillCheck()
+        local PlayerGui = localPlayer:WaitForChild("PlayerGui")
+        
+        local CheckGui = PlayerGui:WaitForChild("SkillCheckPromptGui", 5)
+        if not CheckGui then return end
+
+        local Check = CheckGui:WaitForChild("Check", 5)
+        if not Check then return end
+
+        local Line = Check:WaitForChild("Line", 5)
+        local Goal = Check:WaitForChild("Goal", 5)
+        if not Line or not Goal then return end
+
+        local heartbeatConn = RunService.Stepped:Connect(function()
+            if not skillCheckEnabled or not Check.Visible then
+                if heartbeatConn then heartbeatConn:Disconnect() end
+                return
+            end
+
+            if not Line.Parent or not Goal.Parent then return end
+
+            local lineRot = Line.Rotation % 360
+            local goalRot = Goal.Rotation % 360
+
+            local goalStart = (goalRot + 104) % 360
+            local goalEnd   = (goalRot + 114) % 360
+
+            local isInZone = false
+            if goalStart > goalEnd then
+                isInZone = (lineRot >= goalStart) or (lineRot <= goalEnd)
+            else
+                isInZone = (lineRot >= goalStart) and (lineRot <= goalEnd)
+            end
+
+            if isInZone then
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+                task.wait(0.02)
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+                
+                if heartbeatConn then 
+                    heartbeatConn:Disconnect() 
+                end
+            end
+        end)
+
+        table.insert(connections, heartbeatConn)
+    end
+
+    -- when skillcheck appears
+    local guiConn = localPlayer.PlayerGui.ChildAdded:Connect(function(child)
+        if child.Name == "SkillCheckPromptGui" then
+            task.wait(0.1)
+            ConnectSkillCheck()
+        end
+    end)
+
+    table.insert(connections, guiConn)
+
+    
+    if localPlayer.Character then
+        task.wait(1)
+        ConnectSkillCheck()
+    end
+
+    localPlayer.CharacterAdded:Connect(function()
+        task.wait(1.5)
+        ConnectSkillCheck()
+    end)
+end
+
+local function StopAutoSkillCheck()
+    skillCheckEnabled = false
+    for _, conn in ipairs(connections) do
+        if conn then conn:Disconnect() end
+    end
+    connections = {}
+end
+
+
+Misc:CreateToggle({
+    Name = "Auto Skill Check (Violence District)",
+    CurrentValue = false,
+    Callback = function(Value)
+        skillCheckEnabled = Value
+        if Value then
+            StartAutoSkillCheck()
+        else
+            StopAutoSkillCheck()
+        end
+    end,
+})
+
+
 ------Player--------
 
 --INF JUMP
