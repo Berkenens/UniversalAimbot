@@ -275,5 +275,3 @@ for _, c in ipairs(contentFrame:GetChildren()) do
         TweenService:Create(c, TweenInfo.new(0.5), {TextTransparency = 0}):Play()
     end
 end
-
-print("[MiniStat HUD] Loaded successfully")
