@@ -1,3 +1,5 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/UniversalAimbot/refs/heads/main/miniStatHudUi.lua"))()
+
 local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/Berkenens/UniversalAimbot/refs/heads/main/uimain.lua'))()
 
 local RunService = game:GetService("RunService")
@@ -690,6 +692,13 @@ Other:CreateButton({
     Name = "Shader Gui",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/shaderr/refs/heads/main/shader.lua"))()
+    end
+})
+
+Other:CreateButton({
+    Name = "Mini Stat HUD",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/UniversalAimbot/refs/heads/main/miniStatHudUi.lua"))()
     end
 })
 
