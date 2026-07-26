@@ -1,5 +1,4 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/BloxFruitsFPSBOOSTER/refs/heads/main/bfFPSbooster.lua"))()
-
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/UniversalAimbot/refs/heads/main/miniStatHudUi.lua"))()
 
 local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/Berkenens/UniversalAimbot/refs/heads/main/uimain.lua'))()
 
@@ -23,7 +22,7 @@ local smoothing = 1
 local aimbotEnabled = false 
 local stickyAimEnabled = true
 local wallCheck = false
-local teamCheck = true
+local teamCheck = false
 
 -- 360 
 local mode360Enabled = true
@@ -51,9 +50,9 @@ local targetedCircleColor = Color3.fromRGB(0,255,0)
 
 -- ESP
 local espEnabled = true
-local espName = true
-local espHealth = true
-local espDistance = true
+local espName = false
+local espHealth = false
+local espDistance = false
 local espChams = true
 
 local nameColor = Color3.fromRGB(255,255,255)
@@ -80,9 +79,10 @@ local Hitbox = Window:CreateTab("Hitbox", "square")
 local ESP = Window:CreateTab("ESP", "eye")
 local TargetTab = Window:CreateTab("Target", "crosshair")
 local Allied = Window:CreateTab("Allied", "user")
-local Misc = Window:CreateTab("Misc", "droplets")
+local Misc = Window:CreateTab("Misc", "droplet")
 local Player = Window:CreateTab("Player", "user")
 local Visuals = Window:CreateTab("Visuals", "eye")
+local Ambience = Window:CreateTab("Ambience", "droplets")
 local Other = Window:CreateTab("Other", "settings")
 
 -- FOV
@@ -579,7 +579,7 @@ Aimbot:CreateToggle({
 
 Aimbot:CreateToggle({
     Name = "Team Check",
-    CurrentValue = true,
+    CurrentValue = false,
     Flag = "TeamCheck",
     Callback = function(v)
         teamCheck = v
@@ -607,7 +607,7 @@ ESP:CreateToggle({
 
 ESP:CreateToggle({
     Name = "Player Names",
-    CurrentValue = true,
+    CurrentValue = false,
     Flag = "ESPNames",
     Callback = function(v)
         espName = v
@@ -616,7 +616,7 @@ ESP:CreateToggle({
 
 ESP:CreateToggle({
     Name = "Health",
-    CurrentValue = true,
+    CurrentValue = false,
     Flag = "ESPHealth",
     Callback = function(v)
         espHealth = v
@@ -625,7 +625,7 @@ ESP:CreateToggle({
 
 ESP:CreateToggle({
     Name = "Distance",
-    CurrentValue = true,
+    CurrentValue = false,
     Flag = "ESPDistance",
     Callback = function(v)
         espDistance = v
@@ -642,29 +642,11 @@ ESP:CreateToggle({
 })
 
 ESP:CreateColorPicker({
-    Name = "Name Color",
+    Name = "Text Color",
     Color = nameColor,
     Flag = "ESPNameColor",
     Callback = function(v)
         nameColor = v
-    end
-})
-
-ESP:CreateColorPicker({
-    Name = "Health Color",
-    Color = healthColor,
-    Flag = "ESPHealthColor",
-    Callback = function(v)
-        healthColor = v
-    end
-})
-
-ESP:CreateColorPicker({
-    Name = "Distance Color",
-    Color = distanceColor,
-    Flag = "ESPDistanceColor",
-    Callback = function(v)
-        distanceColor = v
     end
 })
 
@@ -703,6 +685,20 @@ Other:CreateButton({
     Name = "DeSync",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/DeSync/refs/heads/main/maingui.lua"))()
+    end
+})
+
+Other:CreateButton({
+    Name = "Shader Gui",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/shaderr/refs/heads/main/shader.lua"))()
+    end
+})
+
+Other:CreateButton({
+    Name = "Mini Stat HUD",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/UniversalAimbot/refs/heads/main/miniStatHudUi.lua"))()
     end
 })
 
@@ -890,7 +886,7 @@ local LocalPlayer = Players.LocalPlayer
 
 -- 
 
-local TPWalkEnabled = true
+local TPWalkEnabled = false
 local TPWalkSpeed = 1
 
 local TPWalkConnection
@@ -941,7 +937,7 @@ end
 Misc:CreateToggle({
 
     Name = "Speed (AntiStun)",
-    CurrentValue = true,
+    CurrentValue = false,
     Flag = "TPWalkToggle",
 
     Callback = function(Value)
@@ -1333,6 +1329,354 @@ Misc:CreateToggle({
     end,
 })
 
+-----Rainbow Cursor
+
+
+
+local CursorEnabled = false
+local CursorConnection = nil
+local CursorGUI = nil
+
+Misc:CreateToggle({
+    Name = "Custom Cursor",
+    CurrentValue = false,
+    Flag = "CustomCursor",
+    Callback = function(Value)
+        CursorEnabled = Value
+
+        if CursorEnabled then
+            local Players = game:GetService("Players")
+            local RunService = game:GetService("RunService")
+
+            local player = Players.LocalPlayer
+            local mouse = player:GetMouse()
+
+            local screenGui = Instance.new("ScreenGui")
+            screenGui.Name = "AimSightGUI"
+            screenGui.ResetOnSpawn = false
+            screenGui.Parent = player:WaitForChild("PlayerGui")
+            CursorGUI = screenGui
+
+            local aimContainer = Instance.new("Frame")
+            aimContainer.BackgroundTransparency = 1
+            aimContainer.Size = UDim2.new(0, 25, 0, 25)
+            aimContainer.AnchorPoint = Vector2.new(0.5, 0.5)
+            aimContainer.Parent = screenGui
+
+            local function CreateLine(parent, size, pos)
+                local f = Instance.new("Frame")
+                f.Size = size
+                f.Position = pos
+                f.BorderSizePixel = 0
+                f.ZIndex = 5
+                f.Parent = parent
+
+                local stroke = Instance.new("UIStroke")
+                stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                stroke.Color = Color3.new(0, 0, 0)
+                stroke.Thickness = 1
+                stroke.Parent = f
+
+                return f
+            end
+
+            local topLine    = CreateLine(aimContainer, UDim2.new(0, 3, 0, 25), UDim2.new(0.5, -1.5, 0, 0))
+            local bottomLine = CreateLine(aimContainer, UDim2.new(0, 3, 0, 25), UDim2.new(0.5, -1.5, 1, -25))
+            local leftLine   = CreateLine(aimContainer, UDim2.new(0, 25, 0, 3), UDim2.new(0, 0, 0.5, -1.5))
+            local rightLine  = CreateLine(aimContainer, UDim2.new(0, 25, 0, 3), UDim2.new(1, -25, 0.5, -1.5))
+
+            local textLabel = Instance.new("TextLabel")
+            textLabel.BackgroundTransparency = 1
+            textLabel.Size = UDim2.new(0, 150, 0, 23)
+            textLabel.Font = Enum.Font.Arcade
+            textLabel.TextScaled = true
+            textLabel.Text = "Percy.win"
+            textLabel.ZIndex = 10
+            textLabel.Parent = screenGui
+
+            local textStroke = Instance.new("UIStroke")
+            textStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+            textStroke.Color = Color3.new(0, 0, 0)
+            textStroke.Thickness = 1
+            textStroke.LineJoinMode = Enum.LineJoinMode.Round
+            textStroke.Parent = textLabel
+
+            ---
+            local lineThickness     = 3
+            local baseRotationSpeed = 0.8
+            local pulseSpeed        = 2.5
+            local minLength         = -10
+            local maxLength         = -30
+
+            local t                  = 0
+            local rotationProgress   = 0
+            local currentRotSpeed    = baseRotationSpeed
+            local smoothedRot        = 5
+
+            local function getRainbow(time)
+                local r = math.sin(time * 0.6) * 0.5 + 0.5
+                local g = math.sin(time * 0.6 + 2) * 0.5 + 0.5
+                local b = math.sin(time * 0.6 + 4) * 0.5 + 0.5
+                return Color3.new(r, g, b)
+            end
+
+            local function calcRotSpeed(progress)
+                local slowdownStart    = 0.6
+                local slowdownDuration = 0.35
+                local minSpeed         = 0.3
+                if progress >= slowdownStart then
+                    local sp = (progress - slowdownStart) / slowdownDuration
+                    local ep = sp * sp
+                    local sf = 1 - (ep * (1 - minSpeed))
+                    return baseRotationSpeed * math.max(sf, minSpeed)
+                end
+                return baseRotationSpeed
+            end
+
+            local function smoothPulse(time, speed)
+                local raw = math.sin(time * speed) * 0.5 + 0.5
+                return raw * raw
+            end
+
+            CursorConnection = RunService.RenderStepped:Connect(function(dt)
+                t = t + dt
+
+                aimContainer.Position = UDim2.new(0, mouse.X, 0, mouse.Y)
+                textLabel.Position    = UDim2.new(0, mouse.X - 70, 0, mouse.Y + 50)
+
+                rotationProgress = (rotationProgress + currentRotSpeed * dt) % 1
+                currentRotSpeed  = calcRotSpeed(rotationProgress)
+
+                local targetRot = rotationProgress * 360
+                smoothedRot = smoothedRot + (targetRot - smoothedRot) * 1
+                aimContainer.Rotation = smoothedRot
+
+                local pulse  = smoothPulse(t, pulseSpeed)
+                local curLen = minLength + (maxLength - minLength) * pulse
+
+                topLine.Size    = UDim2.new(0, lineThickness, 0, curLen)
+                bottomLine.Size = UDim2.new(0, lineThickness, 0, curLen)
+                leftLine.Size   = UDim2.new(0, curLen, 0, lineThickness)
+                rightLine.Size  = UDim2.new(0, curLen, 0, lineThickness)
+
+                topLine.Position    = UDim2.new(0.5, -lineThickness / 2, 0, 0)
+                bottomLine.Position = UDim2.new(0.5, -lineThickness / 2, 1, -curLen)
+                leftLine.Position   = UDim2.new(0, 0, 0.5, -lineThickness / 2)
+                rightLine.Position  = UDim2.new(1, -curLen, 0.5, -lineThickness / 2)
+
+                local color = getRainbow(t)
+                topLine.BackgroundColor3    = color
+                bottomLine.BackgroundColor3 = color
+                leftLine.BackgroundColor3   = color
+                rightLine.BackgroundColor3  = color
+                textLabel.TextColor3        = color
+            end)
+
+        else
+            if CursorConnection then
+                CursorConnection:Disconnect()
+                CursorConnection = nil
+            end
+            if CursorGUI then
+                CursorGUI:Destroy()
+                CursorGUI = nil
+            end
+        end
+    end
+})
+
+Rayfield.Flags.CustomCursor:Set(true)
+
+--Antilag
+
+
+Misc:CreateButton({
+    Name = "Anti Lag / FPS Boost",
+    Callback = function()
+
+        local Lighting = game:GetService("Lighting")
+        local RunService = game:GetService("RunService")
+
+        local Terrain = workspace:FindFirstChildWhichIsA("Terrain")
+        if Terrain then
+            Terrain.WaterWaveSize = 0
+            Terrain.WaterWaveSpeed = 0
+            Terrain.WaterReflectance = 0
+            Terrain.WaterTransparency = 1
+        end
+
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        Lighting.FogStart = 9e9
+
+        pcall(function()
+            settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        end)
+
+        for _, v in ipairs(game:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CastShadow = false
+                v.Material = Enum.Material.Plastic
+                v.Reflectance = 0
+
+                pcall(function()
+                    v.BackSurface = Enum.SurfaceType.Smooth
+                    v.BottomSurface = Enum.SurfaceType.Smooth
+                    v.FrontSurface = Enum.SurfaceType.Smooth
+                    v.LeftSurface = Enum.SurfaceType.Smooth
+                    v.RightSurface = Enum.SurfaceType.Smooth
+                    v.TopSurface = Enum.SurfaceType.Smooth
+                end)
+
+            elseif v:IsA("Decal") then
+                v.Transparency = 1
+                v.Texture = ""
+
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                v.Lifetime = NumberRange.new(0)
+            end
+        end
+
+        for _, v in ipairs(Lighting:GetDescendants()) do
+            if v:IsA("PostEffect") then
+                v.Enabled = false
+            end
+        end
+
+        workspace.DescendantAdded:Connect(function(child)
+            task.spawn(function()
+
+                if child:IsA("ForceField")
+                or child:IsA("Sparkles")
+                or child:IsA("Smoke")
+                or child:IsA("Fire")
+                or child:IsA("Beam") then
+
+                    RunService.Heartbeat:Wait()
+
+                    pcall(function()
+                        child:Destroy()
+                    end)
+
+                elseif child:IsA("BasePart") then
+                    child.CastShadow = false
+                end
+            end)
+        end)
+
+    end
+})
+
+
+------ Violence Distric Auto Skill Check-------
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local localPlayer = Players.LocalPlayer
+
+local skillCheckEnabled = false
+local connections = {}
+
+local function StartAutoSkillCheck()
+    
+    for _, conn in ipairs(connections) do
+        if conn then conn:Disconnect() end
+    end
+    connections = {}
+
+    local function ConnectSkillCheck()
+        local PlayerGui = localPlayer:WaitForChild("PlayerGui")
+        
+        local CheckGui = PlayerGui:WaitForChild("SkillCheckPromptGui", 5)
+        if not CheckGui then return end
+
+        local Check = CheckGui:WaitForChild("Check", 5)
+        if not Check then return end
+
+        local Line = Check:WaitForChild("Line", 5)
+        local Goal = Check:WaitForChild("Goal", 5)
+        if not Line or not Goal then return end
+
+        local heartbeatConn = RunService.Stepped:Connect(function()
+            if not skillCheckEnabled or not Check.Visible then
+                if heartbeatConn then heartbeatConn:Disconnect() end
+                return
+            end
+
+            if not Line.Parent or not Goal.Parent then return end
+
+            local lineRot = Line.Rotation % 360
+            local goalRot = Goal.Rotation % 360
+
+            local goalStart = (goalRot + 104) % 360
+            local goalEnd   = (goalRot + 114) % 360
+
+            local isInZone = false
+            if goalStart > goalEnd then
+                isInZone = (lineRot >= goalStart) or (lineRot <= goalEnd)
+            else
+                isInZone = (lineRot >= goalStart) and (lineRot <= goalEnd)
+            end
+
+            if isInZone then
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+                task.wait(0.02)
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+                
+                if heartbeatConn then 
+                    heartbeatConn:Disconnect() 
+                end
+            end
+        end)
+
+        table.insert(connections, heartbeatConn)
+    end
+
+    -- when skillcheck appears
+    local guiConn = localPlayer.PlayerGui.ChildAdded:Connect(function(child)
+        if child.Name == "SkillCheckPromptGui" then
+            task.wait(0.1)
+            ConnectSkillCheck()
+        end
+    end)
+
+    table.insert(connections, guiConn)
+
+    
+    if localPlayer.Character then
+        task.wait(1)
+        ConnectSkillCheck()
+    end
+
+    localPlayer.CharacterAdded:Connect(function()
+        task.wait(1.5)
+        ConnectSkillCheck()
+    end)
+end
+
+local function StopAutoSkillCheck()
+    skillCheckEnabled = false
+    for _, conn in ipairs(connections) do
+        if conn then conn:Disconnect() end
+    end
+    connections = {}
+end
+
+
+Misc:CreateToggle({
+    Name = "Auto Skill Check (Violence District)",
+    CurrentValue = false,
+    Callback = function(Value)
+        skillCheckEnabled = Value
+        if Value then
+            StartAutoSkillCheck()
+        else
+            StopAutoSkillCheck()
+        end
+    end,
+})
 
 
 ------Player--------
@@ -1420,6 +1764,532 @@ Player:CreateToggle({
         SetNoclip(Value)
     end,
 })
+
+
+---Movement Speed Button
+
+Player:CreateButton({
+    Name = "Speed Gui",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/UniversalAimbot/refs/heads/main/SpeedGui.lua"))()
+    end
+})
+
+
+
+---- VISUALS PART & Ambience
+
+--- Motion Blur
+
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+
+local MotionBlurEnabled = false
+local BlurAmount = 15
+local BlurAmplifier = 5
+
+local LastVector = Camera.CFrame.LookVector
+local MotionBlurConnection
+
+local MotionBlur = Instance.new("BlurEffect")
+MotionBlur.Name = "RayfieldMotionBlur"
+MotionBlur.Size = 0
+
+local function StartMotionBlur()
+    if MotionBlurConnection then
+        MotionBlurConnection:Disconnect()
+    end
+
+    Camera = workspace.CurrentCamera
+    MotionBlur.Parent = Camera
+
+    LastVector = Camera.CFrame.LookVector
+
+    MotionBlurConnection = RunService.Heartbeat:Connect(function()
+        if not MotionBlurEnabled then
+            return
+        end
+
+        Camera = workspace.CurrentCamera
+
+        if MotionBlur.Parent ~= Camera then
+            MotionBlur.Parent = Camera
+        end
+
+        local Magnitude = (Camera.CFrame.LookVector - LastVector).Magnitude
+        MotionBlur.Size = math.abs(Magnitude) * BlurAmount * BlurAmplifier / 2
+        LastVector = Camera.CFrame.LookVector
+    end)
+end
+
+local function StopMotionBlur()
+    MotionBlur.Size = 0
+    MotionBlur.Parent = nil
+
+    if MotionBlurConnection then
+        MotionBlurConnection:Disconnect()
+        MotionBlurConnection = nil
+    end
+end
+
+workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+    if MotionBlurEnabled then
+        Camera = workspace.CurrentCamera
+        MotionBlur.Parent = Camera
+    end
+end)
+
+Ambience:CreateToggle({
+    Name = "Motion Blur",
+    CurrentValue = false,
+    Flag = "MotionBlurToggle",
+    Callback = function(Value)
+        MotionBlurEnabled = Value
+
+        if Value then
+            StartMotionBlur()
+        else
+            StopMotionBlur()
+        end
+    end
+})
+
+Ambience:CreateSlider({
+    Name = "Blur Amount",
+    Range = {1, 50},
+    Increment = 1,
+    Suffix = "",
+    CurrentValue = 15,
+    Flag = "BlurAmountSlider",
+    Callback = function(Value)
+        BlurAmount = Value
+    end
+})
+
+Ambience:CreateSlider({
+    Name = "Blur Amplifier",
+    Range = {1, 20},
+    Increment = 1,
+    Suffix = "",
+    CurrentValue = 5,
+    Flag = "BlurAmplifierSlider",
+    Callback = function(Value)
+        BlurAmplifier = Value
+    end
+})
+
+
+
+--Rain & ThunderStorm
+---------------------
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local SoundService = game:GetService("SoundService")
+
+local Player = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- 
+local rainEnabled = false
+local thunderEnabled = false
+local rainIntensity = 2
+
+-- 
+local OriginalLighting = {
+    Brightness = Lighting.Brightness,
+    FogColor = Lighting.FogColor,
+    FogStart = Lighting.FogStart,
+    FogEnd = Lighting.FogEnd,
+    OutdoorAmbient = Lighting.OutdoorAmbient,
+    Ambient = Lighting.Ambient
+}
+
+-- save current skybox
+local OriginalSky = Lighting:FindFirstChildOfClass("Sky") and Lighting:FindFirstChildOfClass("Sky"):Clone() or nil
+
+local MaxRainClones = 200 
+local RainPool = {}
+local ActiveRainOffsets = {} 
+local AllSounds = {}
+local MainRain = nil
+local RainFolder = nil
+
+---
+
+-- rain intensity
+local function UpdateRainDensity()
+    if not MainRain then return end
+    
+    local rows = 3 + rainIntensity 
+    local totalNeeded = rows * rows
+    local spacing = 200 / rows 
+    
+    if totalNeeded > MaxRainClones then totalNeeded = MaxRainClones end
+    
+    local newOffsets = {}
+    local halfRow = (rows - 1) / 2
+    local currentIndex = 1
+    
+    for x = 0, rows - 1 do
+        for z = 0, rows - 1 do
+            if currentIndex <= MaxRainClones then
+                local offsetX = (x - halfRow) * spacing
+                local offsetZ = (z - halfRow) * spacing
+                
+                local clone = RainPool[currentIndex]
+                table.insert(newOffsets, {
+                    Model = clone,
+                    Offset = Vector3.new(offsetX, 0, offsetZ)
+                })
+                
+                -- John Rod
+                for _, obj in ipairs(clone:GetDescendants()) do
+                    if obj:IsA("ParticleEmitter") then
+                        obj.Enabled = rainEnabled
+                    end
+                end
+                currentIndex = currentIndex + 1
+            end
+        end
+    end
+    
+    -- 
+    for i = currentIndex, MaxRainClones do
+        local clone = RainPool[i]
+        clone:PivotTo(CFrame.new(0, 10000, 0)) 
+        for _, obj in ipairs(clone:GetDescendants()) do
+            if obj:IsA("ParticleEmitter") then obj.Enabled = false end
+        end
+    end
+    
+    ActiveRainOffsets = newOffsets
+end
+
+-- 
+local function InitializeRain()
+    if MainRain then return end
+    
+    local success, result = pcall(function() return game:GetObjects("rbxassetid://11552439884")[1] end)
+    if not success or not result then return end
+
+    MainRain = result
+    MainRain.Name = "RealisticRain_Main"
+    MainRain.Parent = workspace
+
+    for _, obj in ipairs(MainRain:GetDescendants()) do
+        if obj:IsA("BasePart") then obj.Anchored = true; obj.CanCollide = false end
+        if obj:IsA("ParticleEmitter") then obj.Enabled = rainEnabled end
+        if obj:IsA("Sound") then table.insert(AllSounds, obj) if not rainEnabled then obj:Stop() end end
+    end
+
+    RainFolder = Instance.new("Folder", workspace)
+    RainFolder.Name = "StormRainSystem"
+
+    for i = 1, MaxRainClones do
+        local Clone = result:Clone()
+        for _, obj in ipairs(Clone:GetDescendants()) do
+            if obj:IsA("BasePart") then obj.Anchored = true; obj.CanCollide = false end
+            if obj:IsA("Sound") or obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then obj:Destroy() end
+            if obj:IsA("ParticleEmitter") then obj.Enabled = false end
+        end
+        Clone.Parent = RainFolder
+        table.insert(RainPool, Clone)
+    end
+    UpdateRainDensity()
+end
+
+-- 
+local function ApplyLighting(state)
+    -- 
+    for _, v in ipairs(Lighting:GetChildren()) do
+        if v:IsA("Sky") then v:Destroy() end
+    end
+
+    if state then
+        -- 
+        Lighting.Brightness = 1.5
+        Lighting.FogColor = Color3.fromRGB(90, 90, 90)
+        Lighting.FogStart = 0; Lighting.FogEnd = 3000
+        Lighting.OutdoorAmbient = Color3.fromRGB(105, 105, 105)
+        Lighting.Ambient = Color3.fromRGB(95, 95, 95)
+        
+        local RainSky = Instance.new("Sky", Lighting)
+        RainSky.SkyboxBk = "http://www.roblox.com/asset/?id=4495864450"
+        RainSky.SkyboxDn = "http://www.roblox.com/asset/?id=4495864887"
+        RainSky.SkyboxFt = "http://www.roblox.com/asset/?id=4495865458"
+        RainSky.SkyboxLf = "http://www.roblox.com/asset/?id=4495866035"
+        RainSky.SkyboxRt = "http://www.roblox.com/asset/?id=4495866584"
+        RainSky.SkyboxUp = "http://www.roblox.com/asset/?id=4495867486"
+    else
+        -- turn origin skybox
+        Lighting.Brightness = OriginalLighting.Brightness
+        Lighting.FogColor = OriginalLighting.FogColor
+        Lighting.FogStart = OriginalLighting.FogStart; Lighting.FogEnd = OriginalLighting.FogEnd
+        Lighting.OutdoorAmbient = OriginalLighting.OutdoorAmbient
+        Lighting.Ambient = OriginalLighting.Ambient
+        
+        if OriginalSky then OriginalSky:Clone().Parent = Lighting end
+    end
+end
+
+-- respawn check
+RunService.RenderStepped:Connect(function()
+    if not rainEnabled then return end
+    if Camera and MainRain then MainRain:PivotTo(Camera.CFrame) end
+
+    local Character = Player.Character
+    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+    
+    if Root then
+        local Center = Root.Position + Vector3.new(0, 120, 0)
+        for _, Data in ipairs(ActiveRainOffsets) do
+            if Data.Model then Data.Model:PivotTo(CFrame.new(Center + Data.Offset)) end
+        end
+    end
+end)
+
+-- thunder
+local ThunderSound = Instance.new("Sound", SoundService)
+ThunderSound.SoundId = "rbxassetid://136909414800877"
+ThunderSound.Volume = 1.2; ThunderSound.RollOffMaxDistance = 100000
+
+task.spawn(function()
+    while true do
+        task.wait(math.random(15, 45))
+        if thunderEnabled and rainEnabled then
+            local OldBright = Lighting.Brightness
+            for i = 1, math.random(2, 5) do
+                Lighting.Brightness = 7; task.wait(0.05)
+                Lighting.Brightness = 1; task.wait(0.05)
+            end
+            ThunderSound:Play(); task.wait(0.5); Lighting.Brightness = OldBright
+        end
+    end
+end)
+
+
+Ambience:CreateToggle({
+    Name = "Rain Ambience",
+    CurrentValue = false,
+    Callback = function(Value)
+        rainEnabled = Value
+        InitializeRain()
+        ApplyLighting(Value)
+        
+        -- 
+        UpdateRainDensity()
+        
+        -- 
+        if MainRain then
+            for _, obj in ipairs(MainRain:GetDescendants()) do
+                if obj:IsA("ParticleEmitter") then obj.Enabled = Value end
+            end
+        end
+        for _, sound in ipairs(AllSounds) do
+            if sound then if Value then sound:Play() else sound:Stop() end end
+        end
+    end,
+})
+
+Ambience:CreateToggle({
+    Name = "Thunder",
+    CurrentValue = false,
+    Callback = function(Value)
+        thunderEnabled = Value
+    end,
+})
+
+Ambience:CreateSlider({
+    Name = "Rain Area Density",
+    Range = {1, 10},
+    Increment = 1,
+    Suffix = "x",
+    CurrentValue = 2,
+    Flag = "RainDensitySlider",
+    Callback = function(Value)
+        rainIntensity = Value
+        if rainEnabled then
+            -- 
+            UpdateRainDensity()
+        end
+    end
+})
+
+
+--------------------
+--- Music 
+
+local MusicEnabled = false
+local MusicConnection = nil
+local Sound = nil
+
+local SoundIds = {
+    "rbxassetid://120102995443063",
+    ---- you can add diffrent songs of your choice
+}
+
+local shuffledQueue = {}
+
+local function shuffleQueue()
+    shuffledQueue = {}
+    local pool = {table.unpack(SoundIds)}
+    while #pool > 0 do
+        local i = math.random(1, #pool)
+        table.insert(shuffledQueue, pool[i])
+        table.remove(pool, i)
+    end
+end
+
+local function playNext()
+    if not MusicEnabled then return end
+
+    if #shuffledQueue == 0 then
+        shuffleQueue()
+    end
+
+    local nextId = table.remove(shuffledQueue, 1)
+
+    if Sound then
+        Sound:Stop()
+        Sound:Destroy()
+        Sound = nil
+    end
+
+    Sound = Instance.new("Sound")
+    Sound.SoundId = nextId
+    Sound.Volume = 0.5
+    Sound.Parent = game:GetService("SoundService")
+
+    if MusicConnection then
+        MusicConnection:Disconnect()
+        MusicConnection = nil
+    end
+
+    MusicConnection = Sound.Ended:Connect(function()
+        if MusicEnabled then
+            task.wait(1.55)
+            playNext()
+        end
+    end)
+
+    Sound:Play()
+end
+
+Ambience:CreateToggle({
+    Name = "Background Music",
+    CurrentValue = false,
+    Flag = "BackgroundMusic",
+    Callback = function(Value)
+        MusicEnabled = Value
+
+        if MusicEnabled then
+            shuffleQueue()
+            playNext()
+        else
+            if MusicConnection then
+                MusicConnection:Disconnect()
+                MusicConnection = nil
+            end
+            if Sound then
+                Sound:Stop()
+                Sound:Destroy()
+                Sound = nil
+            end
+            shuffledQueue = {}
+        end
+    end
+})
+
+
+Rayfield.Flags.BackgroundMusic:Set(true)
+
+
+Ambience:CreateButton({
+    Name = "Skip Song",
+    Callback = function()
+        if MusicEnabled then
+            if MusicConnection then
+                MusicConnection:Disconnect()
+                MusicConnection = nil
+            end
+            playNext()
+        end
+    end
+})
+
+
+--Stretch
+
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+
+local ResolutionEnabled = false
+local StretchAmount = 0.65
+
+local ResolutionConnection
+
+local function StartResolution()
+    if ResolutionConnection then
+        ResolutionConnection:Disconnect()
+    end
+
+    ResolutionConnection = RunService.RenderStepped:Connect(function()
+        if not ResolutionEnabled then
+            return
+        end
+
+        Camera = workspace.CurrentCamera
+
+        Camera.CFrame =
+            Camera.CFrame *
+            CFrame.new(
+                0, 0, 0,
+                1, 0, 0,
+                0, StretchAmount, 0,
+                0, 0, 1
+            )
+    end)
+end
+
+local function StopResolution()
+    if ResolutionConnection then
+        ResolutionConnection:Disconnect()
+        ResolutionConnection = nil
+    end
+end
+
+workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+    Camera = workspace.CurrentCamera
+end)
+
+Visuals:CreateToggle({
+    Name = "Resolution Stretch",
+    CurrentValue = false,
+    Flag = "ResolutionStretchToggle",
+    Callback = function(Value)
+        ResolutionEnabled = Value
+
+        if Value then
+            StartResolution()
+        else
+            StopResolution()
+        end
+    end
+})
+
+Visuals:CreateSlider({
+    Name = "Stretch Amount",
+    Range = {10, 100},
+    Increment = 1,
+    Suffix = "%",
+    CurrentValue = 65,
+    Flag = "StretchAmountSlider",
+    Callback = function(Value)
+        StretchAmount = Value / 100
+    end
+})
+
 
 --HEADLESS & KORBLOX
 
@@ -1659,6 +2529,7 @@ Visuals:CreateToggle({
     end,
 })
 
+
 ---AccessoryAdder-----
 
 local Players = game:GetService("Players")
@@ -1824,85 +2695,6 @@ Visuals:CreateButton({
     end
 })
 
---Antilag
-
-
-Visuals:CreateButton({
-    Name = "Anti Lag / FPS Boost",
-    Callback = function()
-
-        local Lighting = game:GetService("Lighting")
-        local RunService = game:GetService("RunService")
-
-        local Terrain = workspace:FindFirstChildWhichIsA("Terrain")
-        if Terrain then
-            Terrain.WaterWaveSize = 0
-            Terrain.WaterWaveSpeed = 0
-            Terrain.WaterReflectance = 0
-            Terrain.WaterTransparency = 1
-        end
-
-        Lighting.GlobalShadows = false
-        Lighting.FogEnd = 9e9
-        Lighting.FogStart = 9e9
-
-        pcall(function()
-            settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-        end)
-
-        for _, v in ipairs(game:GetDescendants()) do
-            if v:IsA("BasePart") then
-                v.CastShadow = false
-                v.Material = Enum.Material.Plastic
-                v.Reflectance = 0
-
-                pcall(function()
-                    v.BackSurface = Enum.SurfaceType.Smooth
-                    v.BottomSurface = Enum.SurfaceType.Smooth
-                    v.FrontSurface = Enum.SurfaceType.Smooth
-                    v.LeftSurface = Enum.SurfaceType.Smooth
-                    v.RightSurface = Enum.SurfaceType.Smooth
-                    v.TopSurface = Enum.SurfaceType.Smooth
-                end)
-
-            elseif v:IsA("Decal") then
-                v.Transparency = 1
-                v.Texture = ""
-
-            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-                v.Lifetime = NumberRange.new(0)
-            end
-        end
-
-        for _, v in ipairs(Lighting:GetDescendants()) do
-            if v:IsA("PostEffect") then
-                v.Enabled = false
-            end
-        end
-
-        workspace.DescendantAdded:Connect(function(child)
-            task.spawn(function()
-
-                if child:IsA("ForceField")
-                or child:IsA("Sparkles")
-                or child:IsA("Smoke")
-                or child:IsA("Fire")
-                or child:IsA("Beam") then
-
-                    RunService.Heartbeat:Wait()
-
-                    pcall(function()
-                        child:Destroy()
-                    end)
-
-                elseif child:IsA("BasePart") then
-                    child.CastShadow = false
-                end
-            end)
-        end)
-
-    end
-})
 
 ----------------------
 Rayfield:Notify({
