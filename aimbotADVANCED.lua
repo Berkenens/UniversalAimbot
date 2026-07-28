@@ -324,7 +324,7 @@ Allied:CreateButton({
 })
 
 TargetTab:CreateButton({
-    Name = "Refresh Playerlist",
+    Name = "Refresh List",
     Callback = function()
         refreshTargetList()
     end
@@ -1765,8 +1765,7 @@ Player:CreateToggle({
     end,
 })
 
-
----Movement Speed Button
+--Speed Gui
 
 Player:CreateButton({
     Name = "Speed Gui",
@@ -1775,7 +1774,14 @@ Player:CreateButton({
     end
 })
 
+--Fling Gui
 
+Player:CreateButton({
+    Name = "Multi Fling Gui",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/multiFGui/refs/heads/main/xx.lua"))()
+    end
+})
 
 ---- VISUALS PART & Ambience
 
@@ -2694,7 +2700,6 @@ Visuals:CreateButton({
         })
     end
 })
-
 
 ----------------------
 Rayfield:Notify({
