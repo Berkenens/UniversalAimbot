@@ -702,6 +702,13 @@ Other:CreateButton({
     end
 })
 
+Other:CreateButton({
+    Name = "Custom Crosshair",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Berkenens/UniversalAimbot/refs/heads/main/cross.lua"))()
+    end
+})
+
 -- AUTO RACE V4
 local AUTO_V4 = false
 local NORMAL_CHECK_INTERVAL = 0.25
